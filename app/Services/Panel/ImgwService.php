@@ -3,7 +3,7 @@
 namespace App\Services\Panel;
 
 use App\Support\CustomerContext;
-use App\Support\ImgwStationCoords;
+use App\Support\ImgwMap;
 use App\Support\ImgwText;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -108,7 +108,7 @@ class ImgwService
                 'icon2' => [],
             ];
             $zjaw = explode(';', (string) $row->zjawiskoIkona);
-            $ikona = $this->cloudIcon($zjaw[0] ?? 'N', $row->zachmurzenie);
+            $ikona = ImgwMap::cloudIcon($zjaw[0] ?? 'N', $row->zachmurzenie);
             if ((int) $raw['night'] === 1 && $ikona) {
                 $night = 'n'.$ikona;
                 if (file_exists(public_path('images/ikony2/'.$night))) {
@@ -130,50 +130,25 @@ class ImgwService
     public function mapLeaflet(): array
     {
         $raw = $this->mapDb();
+        $empty = ['actualHour' => '', 'night' => 0, 'points' => [], 'frames' => [], 'current' => 0];
         if (! is_array($raw) || isset($raw['error']) || empty($raw['rows'])) {
-            return is_array($raw) && isset($raw['error'])
-                ? $raw
-                : ['actualHour' => '', 'night' => 0, 'points' => []];
+            return is_array($raw) && isset($raw['error']) ? $raw : $empty;
         }
 
-        $result = [
-            'actualHour' => $raw['actualHour'],
-            'night' => (int) $raw['night'],
-            'points' => [],
+        $maxTermin = (string) ($raw['actualDateTime'] ?? '');
+        $since = Carbon::parse($maxTermin)->subHours(24)->format('Y-m-d H:i:s');
+        $history = $this->mapRows($since);
+        $frames = ImgwMap::frames($raw['rows'], $history, $maxTermin, CustomerContext::get());
+        $current = max(0, count($frames) - 1);
+        $frame = $frames[$current] ?? ['hour' => $raw['actualHour'], 'night' => (int) $raw['night'], 'points' => []];
+
+        return [
+            'actualHour' => $frame['hour'],
+            'night' => (int) $frame['night'],
+            'points' => $frame['points'],
+            'frames' => $frames,
+            'current' => $current,
         ];
-        foreach ($raw['rows'] as $row) {
-            $coords = ImgwStationCoords::latLon(
-                (int) $row->idStacji,
-                (int) $row->pozX,
-                (int) $row->pozY
-            );
-            if ($coords === null) {
-                continue;
-            }
-            $temp = ($row->temp !== null && $row->temp != -99) ? number_format((float) $row->temp, 0) : '';
-            if ($temp === '-0') {
-                $temp = '0';
-            }
-            $zjaw = explode(';', (string) $row->zjawiskoIkona);
-            $ikona = $this->cloudIcon($zjaw[0] ?? 'N', $row->zachmurzenie);
-            if ((int) $raw['night'] === 1 && $ikona) {
-                $night = 'n'.$ikona;
-                if (file_exists(public_path('images/ikony2/'.$night))) {
-                    $ikona = $night;
-                }
-            }
-            $result['points'][] = [
-                'id' => (int) $row->idStacji,
-                'name' => $row->nazwaStacji,
-                'lat' => $coords[0],
-                'lon' => $coords[1],
-                'temp' => $temp,
-                'icon' => $ikona ? asset('images/ikony2/'.$ikona) : '',
-                'text' => ImgwText::plain($row->zjawiskoTXT),
-            ];
-        }
-
-        return $result;
     }
 
     private function tableDb(): array
@@ -260,15 +235,7 @@ class ImgwService
                 ->groupBy('ls.region')
                 ->orderByDesc('max')
                 ->get();
-            $rows = DB::table('z_uprawnieniadepesze as ud')
-                ->join('z_depesze as d', 'ud.idStacji', '=', 'd.idStacji')
-                ->join('z_listastacji as ls', 'd.idstacji', '=', 'ls.idStacji')
-                ->where('ud.aktywna', 1)
-                ->where('ud.idKlienta', $customer['id'])
-                ->where('ls.aktywna', 1)
-                ->orderBy('ud.lp')
-                ->select(['ls.nazwaStacji', 'd.temp', 'ls.pozY', 'ls.pozX', 'ls.pozWY', 'ls.pozWX', 'd.zjawiskoIkona', 'd.zjawisko', 'd.zachmurzenie', 'd.zjawiskoTXT', 'd.idStacji'])
-                ->get();
+            $rows = ImgwMap::latestByStation($this->mapRows());
         } catch (Throwable $e) {
             report($e);
 
@@ -282,6 +249,7 @@ class ImgwService
 
         return [
             'actualHour' => Carbon::parse($maxTermin)->format('G').':00',
+            'actualDateTime' => $maxTermin,
             'region' => $counts->count() === 1 ? $counts->first()->region : 'Polska',
             'night' => $night,
             'partOfDay' => $night ? 'noc' : 'dzien',
@@ -289,13 +257,24 @@ class ImgwService
         ];
     }
 
-    private function cloudIcon(string $zjaw, $clouds): string
+    private function mapRows(?string $since = null)
     {
-        if ($zjaw !== 'N' && $zjaw !== '' && $zjaw != -99) {
-            return 'w'.$zjaw.'.png';
+        $customer = CustomerContext::get();
+        $query = DB::table('z_uprawnieniadepesze as ud')
+            ->join('z_depesze as d', 'ud.idStacji', '=', 'd.idStacji')
+            ->join('z_listastacji as ls', 'd.idstacji', '=', 'ls.idStacji')
+            ->where('ud.aktywna', 1)
+            ->where('ud.idKlienta', $customer['id'])
+            ->where('ls.aktywna', 1)
+            ->orderBy('ud.lp')
+            ->select([
+                'ls.nazwaStacji', 'd.temp', 'ls.pozY', 'ls.pozX', 'ls.pozWY', 'ls.pozWX',
+                'd.zjawiskoIkona', 'd.zjawisko', 'd.zachmurzenie', 'd.zjawiskoTXT', 'd.idStacji', 'd.termin',
+            ]);
+        if ($since) {
+            $query->where('d.termin', '>=', $since);
         }
-        $map = [0 => 'w01.png', 1 => 'w01.png', 2 => 'w01.png', 3 => 'w02.png', 4 => 'w02.png', 5 => 'w03.png', 6 => 'w03.png', 7 => 'w04.png', 8 => 'w05.png'];
 
-        return $map[(int) $clouds] ?? '';
+        return $query->get();
     }
 }

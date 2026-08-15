@@ -130,7 +130,82 @@ class ImgwContentTest extends TestCase
             ->assertSee('51.103')
             ->assertSee('16.9')
             ->assertSee('wojewodztwa_pl.geojson')
+            ->assertSee('imgw-map-header')
+            ->assertSee('id="imgw-map-hour"', false)
+            ->assertSee('Automatyczne przewijanie')
+            ->assertSee('Zwłoka')
+            ->assertSee('id="imgw-map-frames"', false)
             ->assertDontSee('actualMapStage');
+    }
+
+    public function test_map_new_builds_hour_frames_for_playback(): void
+    {
+        $client = $this->makeClient(['mapaWarunkow' => 1]);
+        DB::table('z_listastacji')->insert([
+            'idStacji' => 12424,
+            'nazwaStacji' => 'Wrocław',
+            'region' => 'Dolnośląskie',
+            'aktywna' => 1,
+            'pozX' => 190,
+            'pozY' => 480,
+            'pozWX' => 480,
+            'pozWY' => 340,
+        ]);
+        DB::table('z_depesze')->insert([
+            [
+                'idStacji' => 12424,
+                'termin' => '2026-08-15 18:00:00',
+                'temp' => 10,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 2,
+            ],
+            [
+                'idStacji' => 12424,
+                'termin' => '2026-08-15 19:00:00',
+                'temp' => 20,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 3,
+            ],
+        ]);
+        DB::table('z_uprawnieniadepesze')->insert([
+            'idKlienta' => $client->id,
+            'idStacji' => 12424,
+            'aktywna' => 1,
+            'lp' => 1,
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $html = $this->post('/klient/content', ['tab' => 'imgwMapNewTab'])
+            ->assertOk()
+            ->assertSee('id="imgw-map-hour"', false)
+            ->assertSee('19:00')
+            ->getContent();
+
+        preg_match('/id="imgw-map-frames">([^<]*)<\/script>/', $html, $match);
+        $this->assertNotEmpty($match[1] ?? null);
+        $frames = json_decode($match[1], true);
+        $this->assertIsArray($frames);
+        $this->assertCount(2, $frames);
+        $this->assertSame('18:00', $frames[0]['hour']);
+        $this->assertSame('19:00', $frames[1]['hour']);
+        $this->assertSame('10', $frames[0]['points'][0]['temp']);
+        $this->assertSame('20', $frames[1]['points'][0]['temp']);
+        $this->assertSame(1, (int) (preg_match('/data-current="1"/', $html)));
+    }
+
+    public function test_map_new_playback_script_and_icon_size(): void
+    {
+        $js = file_get_contents(public_path('js/imgw-map.js'));
+        $this->assertIsString($js);
+        $this->assertStringContainsString('function startImgwPlay', $js);
+        $this->assertStringContainsString('function stepImgwHour', $js);
+        $this->assertStringContainsString('imgw-map-delay', $js);
+
+        $css = file_get_contents(public_path('css/layout.css'));
+        $this->assertIsString($css);
+        $this->assertMatchesRegularExpression('/\.imgw-pin-temp\s*\{[^}]*font:\s*700 16px/s', $css);
+        $this->assertMatchesRegularExpression('/\.imgw-pin-icon img\s*\{[^}]*width:\s*36px/s', $css);
     }
 
     public function test_table_new_tab_renders_datatable(): void
