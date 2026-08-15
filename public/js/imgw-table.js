@@ -43,8 +43,8 @@ function initImgwDataTable() {
     };
     var dtOpts = {
         autoWidth: false,
-        pageLength: 10,
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Wszystkie']],
+        pageLength: 100,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'max']],
         order: [],
         orderClasses: false,
         stripeClasses: [],

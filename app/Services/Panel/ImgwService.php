@@ -52,7 +52,7 @@ class ImgwService
                 'temp' => ($row->temp !== null && $row->temp != -99) ? number_format((float) $row->temp, 1, '.', '') : '-',
                 'tempOdcz' => ($row->tempOdcz !== null && $row->tempOdcz != -99) ? number_format((float) $row->tempOdcz, 1, '.', '-') : '',
                 'zachmurzenieTXT' => ImgwText::decode($row->zachmurzenieTXT),
-                'zjawiskoTXT' => ImgwText::decode($row->zjawiskoTXT),
+                'zjawiskoTXT' => ImgwText::markup($row->zjawiskoTXT),
                 'zjawiskoPoprzednie' => ImgwText::decode($row->zjawiskoPoprzednie),
                 'widzialnosc' => $row->widzialnosc != -99 ? ImgwText::decode($row->widzialnosc) : '-',
                 'wiatr' => ImgwText::decode($row->wiatr),
@@ -169,7 +169,7 @@ class ImgwService
                 'lon' => $coords[1],
                 'temp' => $temp,
                 'icon' => $ikona ? asset('images/ikony2/'.$ikona) : '',
-                'text' => (string) ($row->zjawiskoTXT ?? ''),
+                'text' => ImgwText::plain($row->zjawiskoTXT),
             ];
         }
 

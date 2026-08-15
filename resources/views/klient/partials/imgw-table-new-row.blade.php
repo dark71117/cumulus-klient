@@ -19,7 +19,7 @@
     <td data-order="{{ $row['temp'] === '-' ? -999 : $row['temp'] }}">{{ $row['temp'] }}</td>
     <td data-order="{{ $row['tempOdcz'] === '' ? -999 : $row['tempOdcz'] }}">{{ $row['tempOdcz'] }}</td>
     <td>{{ $row['zachmurzenieTXT'] }}</td>
-    <td>{{ $row['zjawiskoTXT'] }}</td>
+    <td data-export="{{ strip_tags($row['zjawiskoTXT']) }}">{!! $row['zjawiskoTXT'] !!}</td>
     <td>{{ $row['widzialnosc'] }}</td>
     <td>{{ $row['wiatr'] }}</td>
 </tr>

@@ -403,16 +403,16 @@ body.layout-app {
 }
 .imgw-pin-icon {
     display: inline-flex;
-    width: 22px;
-    height: 22px;
+    width: 29px;
+    height: 29px;
     border-radius: 50%;
     align-items: center;
     justify-content: center;
     background: rgba(100, 180, 240, .4);
 }
 .imgw-pin-icon img {
-    width: 18px;
-    height: 18px;
+    width: 23px;
+    height: 23px;
 }
 .imgw-pin-name {
     font: 700 11px/1.1 Verdana, sans-serif;
@@ -572,6 +572,10 @@ body.layout-app {
 .imgw-table-new table.dataTable tbody td {
     padding: 6px 8px;
     border-bottom: 1px solid #e4edf2;
+}
+.imgw-table-new .pogrubione,
+.actualTable .pogrubione {
+    font-weight: 700;
 }
 .imgw-table-new table.dataTable tbody tr.imgwRow td {
     background: #f4f7f8;

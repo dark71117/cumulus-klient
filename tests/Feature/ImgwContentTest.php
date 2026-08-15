@@ -342,6 +342,41 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString('imgwMergedExportData', $js);
         $this->assertStringContainsString('imgw-datatable-pl', $js);
         $this->assertStringContainsString('imgw-datatable-eu', $js);
-        $this->assertStringContainsString('pageLength: 10', $js);
+        $this->assertStringContainsString('pageLength: 100', $js);
+        $this->assertStringContainsString("[10, 25, 50, 100, -1], [10, 25, 50, 100, 'max']", $js);
+    }
+
+    public function test_table_new_renders_phenomenon_html_instead_of_escaped_tags(): void
+    {
+        $client = $this->makeClient(['IMGW' => 1]);
+        DB::table('z_listastacji')->insert([
+            'idStacji' => 1,
+            'nazwaStacji' => 'RUS - Moskwa',
+            'region' => 'EUROPA WSCHODNIA',
+            'aktywna' => 1,
+        ]);
+        DB::table('z_depesze')->insert([
+            'idStacji' => 1,
+            'termin' => now()->format('Y-m-d H:00:00'),
+            'temp' => 21.0,
+            'zjawiskoTXT' => 'słaby &lt;span class="pogrubione"&gt;deszcz&lt;/span&gt; (ciągły)',
+            'widzialnosc' => '10',
+            'wiatr' => 'zach / 11',
+        ]);
+        DB::table('z_uprawnieniadepesze')->insert([
+            'idKlienta' => $client->id,
+            'idStacji' => 1,
+            'aktywna' => 1,
+            'lp' => 1,
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $this->post('/klient/content', ['tab' => 'imgwTableNewTab'])
+            ->assertOk()
+            ->assertSee('RUS - Moskwa')
+            ->assertSee('<span class="pogrubione">deszcz</span>', false)
+            ->assertSee('data-export="słaby deszcz (ciągły)"', false)
+            ->assertDontSee('&lt;span', false);
     }
 }

@@ -34,7 +34,7 @@
                 <td>{{ $row['temp'] }}</td>
                 <td>{{ $row['tempOdcz'] }}</td>
                 <td>{{ $row['zachmurzenieTXT'] }}</td>
-                <td>{{ $row['zjawiskoTXT'] }}</td>
+                <td>{!! $row['zjawiskoTXT'] !!}</td>
                 <td>{{ $row['widzialnosc'] }}</td>
                 <td>{{ $row['wiatr'] }}</td>
             </tr>
