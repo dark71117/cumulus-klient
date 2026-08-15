@@ -162,9 +162,12 @@ class ImgwMap
             }
         }
 
+        $at = Carbon::parse($termin);
+
         return [
-            'hour' => Carbon::parse($termin)->format('G').':00',
-            'termin' => Carbon::parse($termin)->format('Y-m-d H:i:s'),
+            'hour' => $at->format('G').':00',
+            'date' => $at->format('d.m.Y'),
+            'termin' => $at->format('Y-m-d H:i:s'),
             'night' => $night ? 1 : 0,
             'points' => $points,
         ];

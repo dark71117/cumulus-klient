@@ -129,7 +129,7 @@ class ImgwService
 
     public function mapLeaflet(): array
     {
-        $empty = ['actualHour' => '', 'night' => 0, 'points' => [], 'frames' => [], 'current' => 0];
+        $empty = ['actualHour' => '', 'actualDate' => '', 'night' => 0, 'points' => [], 'frames' => [], 'current' => 0];
         try {
             $raw = $this->mapDb();
             if (! is_array($raw) || isset($raw['error']) || empty($raw['rows'])) {
@@ -144,10 +144,16 @@ class ImgwService
             $history = $this->mapHistoryRows($since);
             $frames = ImgwMap::frames($raw['rows'], $history, $maxTermin, CustomerContext::get() ?: []);
             $current = max(0, count($frames) - 1);
-            $frame = $frames[$current] ?? ['hour' => $raw['actualHour'], 'night' => (int) $raw['night'], 'points' => []];
+            $frame = $frames[$current] ?? [
+                'hour' => $raw['actualHour'],
+                'date' => Carbon::parse($maxTermin)->format('d.m.Y'),
+                'night' => (int) $raw['night'],
+                'points' => [],
+            ];
 
             return [
                 'actualHour' => $frame['hour'],
+                'actualDate' => $frame['date'] ?? '',
                 'night' => (int) $frame['night'],
                 'points' => $frame['points'],
                 'frames' => $frames,

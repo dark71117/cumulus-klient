@@ -137,6 +137,12 @@ class ImgwContentTest extends TestCase
             ->assertSee('id="imgw-map-hour"', false)
             ->assertSee('Automatyczne przewijanie')
             ->assertSee('Zwłoka')
+            ->assertSee('id="imgw-map-pause"', false)
+            ->assertSee('imgw-map-step-prev')
+            ->assertSee('imgw-map-step-next')
+            ->assertSee('Tryb ręczny: cofnij o 1 godzinę')
+            ->assertSee('Tryb automatyczny: przewijaj w przód')
+            ->assertSee('Zatrzymaj automatyczne przewijanie')
             ->assertSee('id="imgw-map-frames"', false)
             ->assertDontSee('actualMapStage');
     }
@@ -227,6 +233,7 @@ class ImgwContentTest extends TestCase
             ->assertOk()
             ->assertSee('id="imgw-map-hour"', false)
             ->assertSee('19:00')
+            ->assertSee('15.08.2026')
             ->getContent();
 
         preg_match('/id="imgw-map-frames">([^<]*)<\/script>/', $html, $match);
@@ -262,13 +269,17 @@ class ImgwContentTest extends TestCase
         $this->assertIsString($js);
         $this->assertStringContainsString('function startImgwPlay', $js);
         $this->assertStringContainsString('function stepImgwHour', $js);
+        $this->assertStringContainsString('function bindImgwStep', $js);
+        $this->assertStringContainsString('imgw-map-pause', $js);
         $this->assertStringContainsString('is-missing', $js);
-        $this->assertStringContainsString("'BD'", $js);
+        $this->assertStringContainsString('frame.date', $js);
 
         $css = file_get_contents(public_path('css/layout.css'));
         $this->assertIsString($css);
         $this->assertMatchesRegularExpression('/\.imgw-pin-temp\s*\{[^}]*font:\s*700 16px/s', $css);
         $this->assertMatchesRegularExpression('/\.imgw-pin-icon\s*\{[^}]*background-size:\s*contain/s', $css);
+        $this->assertStringContainsString('.imgw-map-step', $css);
+        $this->assertStringContainsString('.imgw-map-pause-icon', $css);
     }
 
     public function test_table_new_tab_renders_datatable(): void

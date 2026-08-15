@@ -56,6 +56,8 @@ function initImgwLeaflet() {
     var geoUrl = el.getAttribute('data-geojson') || '';
     renderImgwHour(imgwHourIndex, false);
     bindImgwPlay();
+    bindImgwStep();
+    syncImgwPlayButtons();
 
     function afterMask() {
         fitImgwMap(bounds);
@@ -92,7 +94,7 @@ function renderImgwHour(index, allowFit) {
     var frame = imgwFrames[index];
     var hourEl = document.getElementById('imgw-map-hour');
     if (hourEl) {
-        hourEl.textContent = frame.hour || '';
+        hourEl.textContent = (frame.hour || '') + (frame.date ? ', ' + frame.date : '');
     }
     imgwMarkerLayer.clearLayers();
     var night = Number(frame.night) === 1;
@@ -105,6 +107,7 @@ function renderImgwHour(index, allowFit) {
     if (imgwMarkerLayer.bringToFront) {
         imgwMarkerLayer.bringToFront();
     }
+    syncImgwStepButtons();
     if (allowFit) {
         fitImgwMap();
     }
@@ -163,17 +166,23 @@ function bindImgwPlay() {
     if (!root) {
         return;
     }
-    root.querySelectorAll('.imgw-map-play-btn').forEach(function (btn) {
+    root.querySelectorAll('.imgw-map-play-btn[data-dir]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var dir = parseInt(btn.getAttribute('data-dir'), 10) || 1;
             if (imgwPlayDir === dir) {
                 stopImgwPlay();
                 return;
             }
-            stepImgwHour(dir);
+            stepImgwHour(dir, true);
             startImgwPlay(dir);
         });
     });
+    var pause = document.getElementById('imgw-map-pause');
+    if (pause) {
+        pause.addEventListener('click', function () {
+            stopImgwPlay();
+        });
+    }
     var delay = document.getElementById('imgw-map-delay');
     if (delay) {
         delay.addEventListener('change', function () {
@@ -182,6 +191,18 @@ function bindImgwPlay() {
             }
         });
     }
+}
+
+function bindImgwStep() {
+    document.querySelectorAll('.imgw-map-step').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (btn.disabled) {
+                return;
+            }
+            stopImgwPlay();
+            stepImgwHour(parseInt(btn.getAttribute('data-dir'), 10) || 1, false);
+        });
+    });
 }
 
 function startImgwPlay(dir) {
@@ -194,7 +215,7 @@ function startImgwPlay(dir) {
         ms = 3000;
     }
     imgwPlayTimer = setInterval(function () {
-        stepImgwHour(imgwPlayDir);
+        stepImgwHour(imgwPlayDir, true);
     }, ms);
 }
 
@@ -214,21 +235,34 @@ function syncImgwPlayButtons() {
     if (!root) {
         return;
     }
-    root.querySelectorAll('.imgw-map-play-btn').forEach(function (btn) {
+    root.querySelectorAll('.imgw-map-play-btn[data-dir]').forEach(function (btn) {
         var dir = parseInt(btn.getAttribute('data-dir'), 10);
         btn.classList.toggle('is-active', imgwPlayDir === dir);
     });
+    var pause = document.getElementById('imgw-map-pause');
+    if (pause) {
+        pause.classList.toggle('is-active', imgwPlayDir !== 0);
+        pause.disabled = imgwPlayDir === 0;
+    }
 }
 
-function stepImgwHour(dir) {
+function syncImgwStepButtons() {
+    document.querySelectorAll('.imgw-map-step').forEach(function (btn) {
+        var dir = parseInt(btn.getAttribute('data-dir'), 10) || 1;
+        var next = imgwHourIndex + dir;
+        btn.disabled = next < 0 || next >= imgwFrames.length;
+    });
+}
+
+function stepImgwHour(dir, wrap) {
     if (!imgwFrames.length) {
         return;
     }
     var next = imgwHourIndex + dir;
     if (next >= imgwFrames.length) {
-        next = 0;
+        next = wrap ? 0 : imgwFrames.length - 1;
     } else if (next < 0) {
-        next = imgwFrames.length - 1;
+        next = wrap ? imgwFrames.length - 1 : 0;
     }
     renderImgwHour(next, false);
 }
