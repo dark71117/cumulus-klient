@@ -169,13 +169,6 @@ class ImgwContentTest extends TestCase
         DB::table('z_depesze')->insert([
             [
                 'idStacji' => 12424,
-                'termin' => '2026-08-15 18:00:00',
-                'temp' => 10,
-                'zjawiskoIkona' => 'N',
-                'zachmurzenie' => 2,
-            ],
-            [
-                'idStacji' => 12424,
                 'termin' => '2026-08-15 19:00:00',
                 'temp' => 20,
                 'zjawiskoIkona' => 'N',
@@ -187,6 +180,40 @@ class ImgwContentTest extends TestCase
                 'temp' => 8,
                 'zjawiskoIkona' => 'N',
                 'zachmurzenie' => 2,
+            ],
+        ]);
+        DB::table('z_depesze_archiwum')->insert([
+            [
+                'idStacji' => 12424,
+                'termin' => '2026-08-15 18:00:00',
+                'temp' => 10,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 2,
+                'zrodlo' => 'local',
+            ],
+            [
+                'idStacji' => 12424,
+                'termin' => '2026-08-15 19:00:00',
+                'temp' => 20,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 3,
+                'zrodlo' => 'local',
+            ],
+            [
+                'idStacji' => 1,
+                'termin' => '2026-08-15 19:00:00',
+                'temp' => 8,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 2,
+                'zrodlo' => 'local',
+            ],
+            [
+                'idStacji' => 12424,
+                'termin' => '2026-08-15 17:00:00',
+                'temp' => 99,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 8,
+                'zrodlo' => 'interp',
             ],
         ]);
         DB::table('z_uprawnieniadepesze')->insert([
@@ -213,6 +240,7 @@ class ImgwContentTest extends TestCase
         }
         $this->assertSame('18:00', $byHour['18:00']['hour']);
         $this->assertSame('19:00', $byHour['19:00']['hour']);
+        $this->assertArrayNotHasKey('17:00', $byHour);
         $this->assertCount(2, $byHour['18:00']['points']);
         $this->assertCount(2, $byHour['19:00']['points']);
         $temps18 = array_column($byHour['18:00']['points'], 'temp', 'name');

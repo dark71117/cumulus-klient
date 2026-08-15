@@ -141,7 +141,7 @@ class ImgwService
                 return $empty;
             }
             $since = Carbon::parse($maxTermin)->subHours(ImgwMap::PLAYBACK_HOURS)->format('Y-m-d H:i:s');
-            $history = $this->mapRows($since);
+            $history = $this->mapHistoryRows($since);
             $frames = ImgwMap::frames($raw['rows'], $history, $maxTermin, CustomerContext::get() ?: []);
             $current = max(0, count($frames) - 1);
             $frame = $frames[$current] ?? ['hour' => $raw['actualHour'], 'night' => (int) $raw['night'], 'points' => []];
@@ -266,11 +266,22 @@ class ImgwService
         ];
     }
 
-    private function mapRows(?string $since = null)
+    private function mapHistoryRows(string $since)
+    {
+        try {
+            return $this->mapRows($since, 'z_depesze_archiwum as d', true);
+        } catch (Throwable $e) {
+            report($e);
+
+            return $this->mapRows($since);
+        }
+    }
+
+    private function mapRows(?string $since = null, string $depesze = 'z_depesze as d', bool $skipInterp = false)
     {
         $customer = CustomerContext::get();
         $query = DB::table('z_uprawnieniadepesze as ud')
-            ->join('z_depesze as d', 'ud.idStacji', '=', 'd.idStacji')
+            ->join($depesze, 'ud.idStacji', '=', 'd.idStacji')
             ->join('z_listastacji as ls', 'd.idstacji', '=', 'ls.idStacji')
             ->where('ud.aktywna', 1)
             ->where('ud.idKlienta', $customer['id'])
@@ -282,6 +293,11 @@ class ImgwService
             ]);
         if ($since) {
             $query->where('d.termin', '>=', $since);
+        }
+        if ($skipInterp) {
+            $query->where(function ($q) {
+                $q->whereNull('d.zrodlo')->orWhere('d.zrodlo', '!=', 'interp');
+            });
         }
 
         return $query->get();

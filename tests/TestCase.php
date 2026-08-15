@@ -81,6 +81,17 @@ abstract class TestCase extends BaseTestCase
             $table->integer('zachmurzenie')->nullable();
             $table->string('zjawiskoIkona')->nullable();
         });
+        Schema::create('z_depesze_archiwum', function (Blueprint $table) {
+            $table->increments('id');
+            $table->unsignedInteger('idStacji')->nullable();
+            $table->dateTime('termin')->nullable();
+            $table->float('temp')->nullable();
+            $table->string('zjawisko')->nullable();
+            $table->string('zjawiskoTXT')->nullable();
+            $table->integer('zachmurzenie')->nullable();
+            $table->string('zjawiskoIkona')->nullable();
+            $table->string('zrodlo')->nullable();
+        });
         Schema::create('z_listastacji', function (Blueprint $table) {
             $table->unsignedInteger('idStacji')->primary();
             $table->string('nazwaStacji')->nullable();
