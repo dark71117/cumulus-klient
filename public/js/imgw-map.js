@@ -118,7 +118,7 @@ function imgwPointMarker(p, night) {
     var missing = !!p.missing;
     var temp = missing ? 'BD' : (p.temp === '' || p.temp === null ? 'BD' : String(p.temp) + '°');
     var iconHtml = (!missing && p.icon)
-        ? '<span class="imgw-pin-icon"><img src="' + p.icon + '" alt=""></span>'
+        ? '<span class="imgw-pin-icon" style="background-image:url(\'' + String(p.icon).replace(/'/g, '') + '\')"></span>'
         : '';
     var html = '<div class="imgw-pin' + (night ? ' is-night' : '') + (missing ? ' is-missing' : '') + '">' +
         '<div class="imgw-pin-badge">' +

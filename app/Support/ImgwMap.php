@@ -9,12 +9,18 @@ class ImgwMap
     public const PLAYBACK_HOURS = 12;
     public static function cloudIcon(string $zjaw, mixed $clouds): string
     {
+        $zjaw = trim($zjaw);
         if ($zjaw !== 'N' && $zjaw !== '' && $zjaw != -99) {
             return 'w'.$zjaw.'.png';
         }
         $map = [0 => 'w01.png', 1 => 'w01.png', 2 => 'w01.png', 3 => 'w02.png', 4 => 'w02.png', 5 => 'w03.png', 6 => 'w03.png', 7 => 'w04.png', 8 => 'w05.png'];
 
-        return $map[(int) $clouds] ?? '';
+        $clouds = (int) $clouds;
+        if ($clouds < 0) {
+            return '';
+        }
+
+        return $map[$clouds] ?? 'w01.png';
     }
 
     public static function isNight(string $termin, float $lat, float $lon): bool
@@ -57,7 +63,7 @@ class ImgwMap
             'lat' => $coords[0],
             'lon' => $coords[1],
             'temp' => $temp,
-            'icon' => $ikona ? asset('images/ikony2/'.$ikona) : '',
+            'icon' => $ikona ? parse_url(asset('images/ikony2/'.$ikona), PHP_URL_PATH) : '',
             'text' => ImgwText::plain($row->zjawiskoTXT ?? ''),
         ];
     }
@@ -95,19 +101,29 @@ class ImgwMap
     public static function hourKeys(array $byStation, string $maxTermin, int $maxHours = self::PLAYBACK_HOURS): array
     {
         $max = Carbon::parse($maxTermin)->startOfHour();
-        $min = $max->copy()->subHours($maxHours);
-        $hours = [];
-        for ($hour = $min->copy(); $hour->lte($max); $hour->addHour()) {
-            $hours[] = $hour->format('Y-m-d H:00:00');
+        $floor = $max->copy()->subHours($maxHours);
+        $hours = [$max->format('Y-m-d H:00:00') => true];
+        foreach ($byStation as $rows) {
+            foreach ($rows as $row) {
+                if (empty($row->termin)) {
+                    continue;
+                }
+                $termin = Carbon::parse($row->termin)->startOfHour();
+                if ($termin->lt($floor) || $termin->gt($max)) {
+                    continue;
+                }
+                $hours[$termin->format('Y-m-d H:00:00')] = true;
+            }
         }
+        ksort($hours);
 
-        return $hours;
+        return array_keys($hours);
     }
 
     public static function rowAtHour(array $rows, string $hourKey): ?object
     {
         foreach ($rows as $row) {
-            if (Carbon::parse($row->termin)->format('Y-m-d H:00:00') === $hourKey) {
+            if (Carbon::parse($row->termin)->format('Y-m-d H') === Carbon::parse($hourKey)->format('Y-m-d H')) {
                 return $row;
             }
         }

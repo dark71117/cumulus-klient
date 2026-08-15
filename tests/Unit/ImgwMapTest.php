@@ -12,6 +12,8 @@ class ImgwMapTest extends TestCase
         $this->assertSame('w61.png', ImgwMap::cloudIcon('61', 8));
         $this->assertSame('w01.png', ImgwMap::cloudIcon('N', 2));
         $this->assertSame('w05.png', ImgwMap::cloudIcon('N', 8));
+        $this->assertSame('w01.png', ImgwMap::cloudIcon('N', 99));
+        $this->assertSame('', ImgwMap::cloudIcon('N', -99));
     }
 
     public function test_latest_by_station_keeps_newest_row(): void
@@ -43,9 +45,9 @@ class ImgwMapTest extends TestCase
             ['geo_lat' => 51.1, 'geo_lon' => 17.0]
         );
 
-        $this->assertCount(ImgwMap::PLAYBACK_HOURS + 1, $frames);
-        $this->assertSame('7:00', $frames[0]['hour']);
-        $this->assertSame('19:00', $frames[ImgwMap::PLAYBACK_HOURS]['hour']);
+        $this->assertCount(2, $frames);
+        $this->assertSame('18:00', $frames[0]['hour']);
+        $this->assertSame('19:00', $frames[1]['hour']);
         $byHour = [];
         foreach ($frames as $frame) {
             $byHour[$frame['hour']] = $frame;
@@ -77,9 +79,8 @@ class ImgwMapTest extends TestCase
             'geo_lat' => 51.1,
             'geo_lon' => 17.0,
         ]);
-        $this->assertCount(ImgwMap::PLAYBACK_HOURS + 1, $frames);
-        $this->assertSame('3:00', $frames[0]['hour']);
-        $this->assertSame('15:00', $frames[ImgwMap::PLAYBACK_HOURS]['hour']);
+        $this->assertCount(1, $frames);
+        $this->assertSame('15:00', $frames[0]['hour']);
     }
 
     private function mapRow(int $id, string $name, string $termin, float $temp, int $x, int $y): object

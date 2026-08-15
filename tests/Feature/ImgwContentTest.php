@@ -206,7 +206,7 @@ class ImgwContentTest extends TestCase
         $this->assertNotEmpty($match[1] ?? null);
         $frames = json_decode($match[1], true);
         $this->assertIsArray($frames);
-        $this->assertCount(13, $frames);
+        $this->assertCount(2, $frames);
         $byHour = [];
         foreach ($frames as $frame) {
             $byHour[$frame['hour']] = $frame;
@@ -225,7 +225,7 @@ class ImgwContentTest extends TestCase
         $this->assertIsArray($krakow18);
         $this->assertTrue($krakow18['missing']);
         $this->assertSame('', $krakow18['icon']);
-        $this->assertSame(1, (int) (preg_match('/data-current="12"/', $html)));
+        $this->assertSame(1, (int) (preg_match('/data-current="1"/', $html)));
     }
 
     public function test_map_new_playback_script_and_icon_size(): void
@@ -240,7 +240,7 @@ class ImgwContentTest extends TestCase
         $css = file_get_contents(public_path('css/layout.css'));
         $this->assertIsString($css);
         $this->assertMatchesRegularExpression('/\.imgw-pin-temp\s*\{[^}]*font:\s*700 16px/s', $css);
-        $this->assertMatchesRegularExpression('/\.imgw-pin-icon img\s*\{[^}]*width:\s*36px/s', $css);
+        $this->assertMatchesRegularExpression('/\.imgw-pin-icon\s*\{[^}]*background-size:\s*contain/s', $css);
     }
 
     public function test_table_new_tab_renders_datatable(): void
