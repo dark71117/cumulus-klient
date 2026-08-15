@@ -224,7 +224,7 @@ function loadContent(tab, position) {
                 initImgwLeaflet();
             } else if (hasClassic) {
                 fitActualMap();
-            } else if (contentDiv.find('#imgw-datatable').length) {
+            } else if (contentDiv.find('.imgw-datatable').length) {
                 initImgwDataTable();
             }
         },

@@ -1,3 +1,14 @@
+@php
+    $rowsPl = [];
+    $rowsEu = [];
+    foreach ($data['rows'] as $row) {
+        if (\App\Support\ImgwRegion::isEurope((string) $row['region'])) {
+            $rowsEu[] = $row;
+        } else {
+            $rowsPl[] = $row;
+        }
+    }
+@endphp
 @if(!empty($data['rows']))
     <div class="imgw-table-new" data-hour="{{ $data['actualHour'] }}">
         <div class="imgw-dt-head">
@@ -6,56 +17,45 @@
                 <span class="imgw-dt-sub">(co 1 godzinę)</span>
             </div>
             <div class="imgw-dt-legend">
-                <span><span class="circleBase yellowBackColor"></span> godzinę wcześniej</span>
-                <span><span class="circleBase redBackColor"></span> dwie godziny temu</span>
+                <span><span class="imgw-dt-swatch imgw-delay-1"></span> nazwa miasta — dane sprzed godziny</span>
+                <span><span class="imgw-dt-swatch imgw-delay-2"></span> nazwa miasta — dane sprzed dwóch godzin</span>
             </div>
         </div>
         @if(!empty($data['pressure']))
             <div class="pressure imgw-dt-pressure">{!! $data['pressure'] !!}</div>
         @endif
-        <table id="imgw-datatable" class="imgw-datatable display nowrap" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Województwo</th>
-                    <th>Miejscowość</th>
-                    <th>Temp. [°C]</th>
-                    <th>Temp. odcz. [°C]</th>
-                    <th>Zachmurzenie</th>
-                    <th>Zjawisko</th>
-                    <th>Widoczność [km]</th>
-                    <th>Wiatr/Porywy [km/h]</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach($data['rows'] as $row)
-                @php
-                    $delay = $row['godzina'] == 1 ? ' (1 h)' : ($row['godzina'] == 2 ? ' (2 h)' : '');
-                @endphp
-                <tr class="{{ $row['imgwRow'] }}">
-                    <td>{{ $row['region'] }}</td>
-                    <td{!! $row['imgwCity'] !!} data-export="{{ $row['nazwaStacji'].$delay }}">
-                        {{ $row['nazwaStacji'] }}
-                        @if($row['godzina'] == 1)
-                            <span class="circleBase yellowBackColor" title="Opóźnienie 1h"></span>
-                        @elseif($row['godzina'] == 2)
-                            <span class="circleBase redBackColor" title="Opóźnienie 2h"></span>
-                        @endif
-                    </td>
-                    <td data-order="{{ $row['temp'] === '-' ? -999 : $row['temp'] }}">{{ $row['temp'] }}</td>
-                    <td data-order="{{ $row['tempOdcz'] === '' ? -999 : $row['tempOdcz'] }}">{{ $row['tempOdcz'] }}</td>
-                    <td>{{ $row['zachmurzenieTXT'] }}</td>
-                    <td>{{ $row['zjawiskoTXT'] }}</td>
-                    <td>{{ $row['widzialnosc'] }}</td>
-                    <td>{{ $row['wiatr'] }}</td>
-                </tr>
-            @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="imgw-dt-toolbar">
+            <div class="imgw-dt-export"></div>
+            <label class="imgw-dt-search-label">Szukaj:
+                <input type="search" id="imgw-dt-search" placeholder="Miejscowość, zjawisko…">
+            </label>
+        </div>
+        <div class="imgw-dt-shared-filters" aria-label="Filtry kolumn">
+            <input type="search" class="imgw-dt-colfilter" data-col="0" placeholder="Województwo / region">
+            <input type="search" class="imgw-dt-colfilter" data-col="1" placeholder="Miejscowość">
+            <input type="search" class="imgw-dt-colfilter" data-col="2" placeholder="Temp.">
+            <input type="search" class="imgw-dt-colfilter" data-col="3" placeholder="Temp. odcz.">
+            <input type="search" class="imgw-dt-colfilter" data-col="4" placeholder="Zachmurzenie">
+            <input type="search" class="imgw-dt-colfilter" data-col="5" placeholder="Zjawisko">
+            <input type="search" class="imgw-dt-colfilter" data-col="6" placeholder="Widoczność">
+            <input type="search" class="imgw-dt-colfilter" data-col="7" placeholder="Wiatr">
+        </div>
+        @if(!empty($rowsPl))
+            @include('klient.partials.imgw-table-new-section', [
+                'id' => 'imgw-datatable-pl',
+                'title' => 'Polska',
+                'regionLabel' => 'Województwo',
+                'rows' => $rowsPl,
+            ])
+        @endif
+        @if(!empty($rowsEu))
+            @include('klient.partials.imgw-table-new-section', [
+                'id' => 'imgw-datatable-eu',
+                'title' => 'Europa',
+                'regionLabel' => 'Region',
+                'rows' => $rowsEu,
+            ])
+        @endif
     </div>
 @else
     Brak danych

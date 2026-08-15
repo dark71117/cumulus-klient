@@ -149,7 +149,7 @@ class ImgwContentTest extends TestCase
             'tempOdcz' => 11.0,
             'zachmurzenieTXT' => 'małe',
             'zjawiskoTXT' => '',
-            'widzialnosc' => '50',
+            'widzialnosc' => '&ge; 10',
             'wiatr' => 'pn / 4',
             'cisnienieTXT' => '',
         ]);
@@ -166,10 +166,14 @@ class ImgwContentTest extends TestCase
 
         $this->post('/klient/content', ['tab' => 'imgwTableNewTab'])
             ->assertOk()
-            ->assertSee('imgw-datatable')
+            ->assertSee('imgw-datatable-pl')
+            ->assertSee('Polska')
             ->assertSee('Wrocław')
             ->assertSee('Dolnośląskie')
             ->assertSee('Województwo')
+            ->assertSee('≥ 10')
+            ->assertDontSee('&ge;')
+            ->assertDontSee('imgw-datatable-eu')
             ->assertDontSee('actualTable')
             ->assertDontSee('Błąd 404');
     }
@@ -186,6 +190,147 @@ class ImgwContentTest extends TestCase
             ->assertDontSee('imgw-datatable');
     }
 
+    public function test_table_new_splits_poland_and_europe(): void
+    {
+        $client = $this->makeClient(['IMGW' => 1, 'wojDepesze' => 1]);
+        DB::table('z_listastacji')->insert([
+            [
+                'idStacji' => 1,
+                'nazwaStacji' => 'Wrocław',
+                'region' => 'Dolnośląskie',
+                'aktywna' => 1,
+            ],
+            [
+                'idStacji' => 2,
+                'nazwaStacji' => 'Bruksela',
+                'region' => 'EUROPA CENTRALNA',
+                'aktywna' => 1,
+            ],
+        ]);
+        $termin = now()->format('Y-m-d H:00:00');
+        DB::table('z_depesze')->insert([
+            [
+                'idStacji' => 1,
+                'termin' => $termin,
+                'temp' => 12.3,
+                'tempOdcz' => 11.0,
+                'zachmurzenieTXT' => 'małe',
+                'zjawiskoTXT' => '',
+                'widzialnosc' => '50',
+                'wiatr' => 'pn / 4',
+                'cisnienieTXT' => '',
+            ],
+            [
+                'idStacji' => 2,
+                'termin' => $termin,
+                'temp' => 8.0,
+                'tempOdcz' => 6.0,
+                'zachmurzenieTXT' => 'duże',
+                'zjawiskoTXT' => '',
+                'widzialnosc' => '10',
+                'wiatr' => 'zach / 22',
+                'cisnienieTXT' => '',
+            ],
+        ]);
+        DB::table('z_uprawnieniadepesze')->insert([
+            ['idKlienta' => $client->id, 'idStacji' => 1, 'aktywna' => 1, 'cisnienie' => 0, 'lp' => 1],
+            ['idKlienta' => $client->id, 'idStacji' => 2, 'aktywna' => 1, 'cisnienie' => 0, 'lp' => 2],
+        ]);
+
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $html = $this->post('/klient/content', ['tab' => 'imgwTableNewTab'])
+            ->assertOk()
+            ->assertSee('imgw-datatable-pl')
+            ->assertSee('imgw-datatable-eu')
+            ->assertSee('Polska')
+            ->assertSee('Europa')
+            ->assertSee('id="imgw-dt-search"', false)
+            ->getContent();
+
+        $pl = strpos($html, 'id="imgw-datatable-pl"');
+        $eu = strpos($html, 'id="imgw-datatable-eu"');
+        $wroclaw = strpos($html, 'Wrocław');
+        $bruksela = strpos($html, 'Bruksela');
+        $this->assertNotFalse($pl);
+        $this->assertNotFalse($eu);
+        $this->assertLessThan($eu, $pl);
+        $this->assertGreaterThan($pl, $wroclaw);
+        $this->assertLessThan($eu, $wroclaw);
+        $this->assertGreaterThan($eu, $bruksela);
+    }
+
+    public function test_table_new_marks_delayed_city_cell_not_whole_row(): void
+    {
+        $client = $this->makeClient(['IMGW' => 1]);
+        $actual = now()->startOfHour();
+        DB::table('z_listastacji')->insert([
+            ['idStacji' => 1, 'nazwaStacji' => 'Wrocław', 'region' => 'Dolnośląskie', 'aktywna' => 1],
+            ['idStacji' => 2, 'nazwaStacji' => 'Amsterdam', 'region' => 'EUROPA ZACHODNIA', 'aktywna' => 1],
+            ['idStacji' => 3, 'nazwaStacji' => 'Kopenhaga', 'region' => 'EUROPA PÓŁNOCNA', 'aktywna' => 1],
+        ]);
+        DB::table('z_depesze')->insert([
+            [
+                'idStacji' => 1,
+                'termin' => $actual->format('Y-m-d H:i:s'),
+                'temp' => 12.3,
+                'widzialnosc' => '50',
+                'wiatr' => 'pn / 4',
+                'zjawiskoKolor' => '',
+            ],
+            [
+                'idStacji' => 2,
+                'termin' => $actual->copy()->subHours(1)->format('Y-m-d H:i:s'),
+                'temp' => 9.0,
+                'widzialnosc' => '10',
+                'wiatr' => 'zach / 22',
+                'zjawiskoKolor' => 'deszcz',
+            ],
+            [
+                'idStacji' => 3,
+                'termin' => $actual->copy()->subHours(2)->format('Y-m-d H:i:s'),
+                'temp' => 4.0,
+                'widzialnosc' => '8',
+                'wiatr' => 'pn / 11',
+                'zjawiskoKolor' => '',
+            ],
+        ]);
+        DB::table('z_uprawnieniadepesze')->insert([
+            ['idKlienta' => $client->id, 'idStacji' => 1, 'aktywna' => 1, 'lp' => 1],
+            ['idKlienta' => $client->id, 'idStacji' => 2, 'aktywna' => 1, 'lp' => 2],
+            ['idKlienta' => $client->id, 'idStacji' => 3, 'aktywna' => 1, 'lp' => 3],
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $html = $this->post('/klient/content', ['tab' => 'imgwTableNewTab'])
+            ->assertOk()
+            ->assertSee('Amsterdam')
+            ->assertSee('Kopenhaga')
+            ->assertSee('imgw-delay-1')
+            ->assertSee('imgw-delay-2')
+            ->assertSee('imgwdeszcz')
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<td[^>]*class="[^"]*imgw-delay-1[^"]*"[^>]*>\s*Amsterdam/u',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '/<td[^>]*class="[^"]*imgw-delay-2[^"]*"[^>]*>\s*Kopenhaga/u',
+            $html
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<td[^>]*class="[^"]*imgw-delay-[12][^"]*"[^>]*>\s*Wrocław/u',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '/<tr class="imgwdeszcz">[\s\S]*?Amsterdam[\s\S]*?<\/tr>/u',
+            $html
+        );
+    }
+
     public function test_table_new_export_uses_applied_filter(): void
     {
         $js = file_get_contents(public_path('js/imgw-table.js'));
@@ -194,5 +339,9 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString("page: 'all'", $js);
         $this->assertStringContainsString("extend: 'excelHtml5'", $js);
         $this->assertStringContainsString("extend: 'pdfHtml5'", $js);
+        $this->assertStringContainsString('imgwMergedExportData', $js);
+        $this->assertStringContainsString('imgw-datatable-pl', $js);
+        $this->assertStringContainsString('imgw-datatable-eu', $js);
+        $this->assertStringContainsString('pageLength: 10', $js);
     }
 }

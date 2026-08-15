@@ -4,6 +4,7 @@ namespace App\Services\Panel;
 
 use App\Support\CustomerContext;
 use App\Support\ImgwStationCoords;
+use App\Support\ImgwText;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -37,7 +38,9 @@ class ImgwService
         foreach ($raw['rows'] as $row) {
             $godzina = 0;
             if ($actual && ! empty($row->termin)) {
-                $godzina = (int) $actual->diffInHours(Carbon::parse($row->termin));
+                $godzina = (int) floor(abs(
+                    $actual->getTimestamp() - Carbon::parse($row->termin)->getTimestamp()
+                ) / 3600);
             }
             $item = [
                 'regionRow' => 0,
@@ -48,11 +51,11 @@ class ImgwService
                 'godzina' => $godzina,
                 'temp' => ($row->temp !== null && $row->temp != -99) ? number_format((float) $row->temp, 1, '.', '') : '-',
                 'tempOdcz' => ($row->tempOdcz !== null && $row->tempOdcz != -99) ? number_format((float) $row->tempOdcz, 1, '.', '-') : '',
-                'zachmurzenieTXT' => $row->zachmurzenieTXT,
-                'zjawiskoTXT' => $row->zjawiskoTXT,
-                'zjawiskoPoprzednie' => $row->zjawiskoPoprzednie,
-                'widzialnosc' => $row->widzialnosc != -99 ? $row->widzialnosc : '-',
-                'wiatr' => $row->wiatr,
+                'zachmurzenieTXT' => ImgwText::decode($row->zachmurzenieTXT),
+                'zjawiskoTXT' => ImgwText::decode($row->zjawiskoTXT),
+                'zjawiskoPoprzednie' => ImgwText::decode($row->zjawiskoPoprzednie),
+                'widzialnosc' => $row->widzialnosc != -99 ? ImgwText::decode($row->widzialnosc) : '-',
+                'wiatr' => ImgwText::decode($row->wiatr),
             ];
             if ($regionRow != $row->region && (int) ($customer['wojDepesze'] ?? 0) === 1) {
                 $item['regionRow'] = 1;
