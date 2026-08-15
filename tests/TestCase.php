@@ -48,6 +48,7 @@ abstract class TestCase extends BaseTestCase
             $table->integer('wojDepesze')->default(0);
             $table->float('geo_lat')->nullable();
             $table->float('geo_lon')->nullable();
+            $table->unsignedTinyInteger('mapaOkresy')->default(24);
         });
         Schema::create('ip_klienci', function (Blueprint $table) {
             $table->increments('id');
@@ -88,6 +89,7 @@ abstract class TestCase extends BaseTestCase
             $table->float('temp')->nullable();
             $table->string('zjawisko')->nullable();
             $table->string('zjawiskoTXT')->nullable();
+            $table->string('zachmurzenieTXT')->nullable();
             $table->integer('zachmurzenie')->nullable();
             $table->string('zjawiskoIkona')->nullable();
             $table->string('zrodlo')->nullable();

@@ -6,7 +6,21 @@ use Carbon\Carbon;
 
 class ImgwMap
 {
-    public const PLAYBACK_HOURS = 12;
+    public const PLAYBACK_DEFAULT = 24;
+    public const PLAYBACK_MIN = 12;
+    public const PLAYBACK_MAX = 48;
+    public const PLAYBACK_CHOICES = [12, 24, 36, 48];
+
+    public static function playbackLimit(?array $customer = null): int
+    {
+        $value = (int) (($customer ?? [])['mapaOkresy'] ?? self::PLAYBACK_DEFAULT);
+        if ($value < 1) {
+            $value = self::PLAYBACK_DEFAULT;
+        }
+
+        return max(self::PLAYBACK_MIN, min(self::PLAYBACK_MAX, $value));
+    }
+
     public static function cloudIcon(string $zjaw, mixed $clouds): string
     {
         $zjaw = trim($zjaw);
@@ -57,6 +71,8 @@ class ImgwMap
             }
         }
 
+        $zjawisko = ImgwText::plain($row->zjawiskoTXT ?? '');
+
         return [
             'id' => (int) $row->idStacji,
             'name' => (string) $row->nazwaStacji,
@@ -64,7 +80,7 @@ class ImgwMap
             'lon' => $coords[1],
             'temp' => $temp,
             'icon' => $ikona ? parse_url(asset('images/ikony2/'.$ikona), PHP_URL_PATH) : '',
-            'text' => ImgwText::plain($row->zjawiskoTXT ?? ''),
+            'text' => $zjawisko !== '' ? $zjawisko : ImgwText::cloudCover($row->zachmurzenieTXT ?? ''),
         ];
     }
 
@@ -73,8 +89,9 @@ class ImgwMap
         $lat = (float) ($customer['geo_lat'] ?? 52);
         $lon = (float) ($customer['geo_lon'] ?? 19);
         $byStation = self::rowsByStation($historyRows, $latestRows);
+        $limit = self::playbackLimit($customer);
         $frames = [];
-        foreach (self::hourKeys($byStation, $maxTermin) as $termin) {
+        foreach (self::hourKeys($byStation, $maxTermin, $limit) as $termin) {
             $frames[] = self::frameFromStations($termin, $byStation, $lat, $lon);
         }
 
@@ -98,10 +115,9 @@ class ImgwMap
         return $byStation;
     }
 
-    public static function hourKeys(array $byStation, string $maxTermin, int $maxHours = self::PLAYBACK_HOURS): array
+    public static function hourKeys(array $byStation, string $maxTermin, int $limit = self::PLAYBACK_DEFAULT): array
     {
         $max = Carbon::parse($maxTermin)->startOfHour();
-        $floor = $max->copy()->subHours($maxHours);
         $hours = [$max->format('Y-m-d H:00:00') => true];
         foreach ($byStation as $rows) {
             foreach ($rows as $row) {
@@ -109,13 +125,16 @@ class ImgwMap
                     continue;
                 }
                 $termin = Carbon::parse($row->termin)->startOfHour();
-                if ($termin->lt($floor) || $termin->gt($max)) {
+                if ($termin->gt($max)) {
                     continue;
                 }
                 $hours[$termin->format('Y-m-d H:00:00')] = true;
             }
         }
         ksort($hours);
+        if (count($hours) > $limit) {
+            $hours = array_slice($hours, -$limit, null, true);
+        }
 
         return array_keys($hours);
     }

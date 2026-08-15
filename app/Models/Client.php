@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class Client extends Authenticatable
 {
@@ -54,5 +56,19 @@ class Client extends Authenticatable
     public static function findActiveByAuthKey(string $authKey): ?self
     {
         return static::query()->where('auth_key', $authKey)->where('aktywny', 1)->first();
+    }
+
+    public static function ensureMapaOkresyColumn(): void
+    {
+        static $ready = false;
+        if ($ready || Schema::hasColumn('z_klienci', 'mapaOkresy')) {
+            $ready = true;
+
+            return;
+        }
+        Schema::table('z_klienci', function (Blueprint $table) {
+            $table->unsignedTinyInteger('mapaOkresy')->default(24);
+        });
+        $ready = true;
     }
 }

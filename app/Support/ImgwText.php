@@ -14,6 +14,19 @@ class ImgwText
         return trim(strip_tags(self::decode($value)));
     }
 
+    public static function cloudCover(mixed $value): string
+    {
+        $text = mb_strtolower(self::plain($value), 'UTF-8');
+        if ($text === '') {
+            return '';
+        }
+        if (str_contains($text, 'zachmurzenie') || str_contains($text, 'bezchmurn') || str_contains($text, 'niebo')) {
+            return $text;
+        }
+
+        return 'zachmurzenie '.$text;
+    }
+
     public static function markup(mixed $value): string
     {
         $text = self::decode($value);

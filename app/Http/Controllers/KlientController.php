@@ -13,6 +13,7 @@ use App\Services\Panel\MenuTabsService;
 use App\Services\Panel\MeteomaxService;
 use App\Services\Panel\WarningService;
 use App\Support\CustomerContext;
+use App\Support\ImgwMap;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -75,6 +76,20 @@ class KlientController extends Controller
         $html = $this->renderTab($tab, $position);
 
         return response($html);
+    }
+
+    public function saveMapLimit(Request $request): JsonResponse
+    {
+        $id = CustomerContext::id();
+        abort_unless($id > 0, 403);
+        $limit = ImgwMap::playbackLimit(['mapaOkresy' => (int) $request->input('limit', ImgwMap::PLAYBACK_DEFAULT)]);
+        Client::ensureMapaOkresyColumn();
+        $client = Client::query()->findOrFail($id);
+        $client->mapaOkresy = $limit;
+        $client->save();
+        CustomerContext::put($client);
+
+        return response()->json(['ok' => true, 'limit' => $limit]);
     }
 
     public function downloadTv(string $filename, AnimationService $animation): BinaryFileResponse

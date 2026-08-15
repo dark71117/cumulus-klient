@@ -19,6 +19,7 @@ Route::prefix('klient')->group(function () {
         Route::post('/actualtabs', [KlientController::class, 'actualTabs'])->name('klient.actualtabs');
         Route::post('/tabstatus', [KlientController::class, 'tabStatus'])->name('klient.tabstatus');
         Route::post('/content', [KlientController::class, 'content'])->name('klient.content');
+        Route::post('/maplimit', [KlientController::class, 'saveMapLimit'])->name('klient.maplimit');
         Route::get('/pobierz/tv/{filename}', [KlientController::class, 'downloadTv'])->name('klient.tvfile')->where('filename', '.*');
         Route::get('/kamery/{variant}/{number}/{region?}', [KlientController::class, 'cameras'])->name('klient.cameras');
         Route::get('/mmregion/{id}/{b}/{c}', [KlientController::class, 'mmRegion']);

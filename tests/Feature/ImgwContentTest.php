@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Client;
 use App\Support\CustomerContext;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -113,6 +115,7 @@ class ImgwContentTest extends TestCase
             'temp' => 12.3,
             'zjawiskoIkona' => 'N',
             'zachmurzenie' => 2,
+            'zjawiskoTXT' => 'słaby &lt;span class="pogrubione"&gt;deszcz&lt;/span&gt;',
         ]);
         DB::table('z_uprawnieniadepesze')->insert([
             'idKlienta' => $client->id,
@@ -133,8 +136,13 @@ class ImgwContentTest extends TestCase
             ->assertSee('imgw-map-header')
             ->assertSee('imgw-dt-head')
             ->assertSee('imgw-dt-title')
+            ->assertSee('imgw-map-title')
             ->assertSee('(co 1 godzinę)')
             ->assertSee('id="imgw-map-hour"', false)
+            ->assertSee('id="imgw-map-jump"', false)
+            ->assertSee('id="imgw-map-limit"', false)
+            ->assertSee('Wstecz')
+            ->assertSee('Skok do godziny')
             ->assertSee('Automatyczne przewijanie')
             ->assertSee('Zwłoka')
             ->assertSee('id="imgw-map-pause"', false)
@@ -144,6 +152,7 @@ class ImgwContentTest extends TestCase
             ->assertSee('Tryb automatyczny: przewijaj w przód')
             ->assertSee('Zatrzymaj automatyczne przewijanie')
             ->assertSee('id="imgw-map-frames"', false)
+            ->assertSee('słaby deszcz')
             ->assertDontSee('actualMapStage');
     }
 
@@ -261,6 +270,123 @@ class ImgwContentTest extends TestCase
         $this->assertTrue($krakow18['missing']);
         $this->assertSame('', $krakow18['icon']);
         $this->assertSame(1, (int) (preg_match('/data-current="1"/', $html)));
+        $this->assertStringContainsString('id="imgw-map-jump"', $html);
+        $opt19 = strpos($html, '15.08.2026, 19:00');
+        $opt18 = strpos($html, '15.08.2026, 18:00');
+        $this->assertNotFalse($opt19);
+        $this->assertNotFalse($opt18);
+        $this->assertLessThan($opt18, $opt19);
+    }
+
+    public function test_map_new_limits_history_to_last_48_entries(): void
+    {
+        $client = $this->makeClient(['mapaWarunkow' => 1]);
+        DB::table('z_listastacji')->insert([
+            'idStacji' => 12424,
+            'nazwaStacji' => 'Wrocław',
+            'region' => 'Dolnośląskie',
+            'aktywna' => 1,
+            'pozX' => 190,
+            'pozY' => 480,
+            'pozWX' => 480,
+            'pozWY' => 340,
+        ]);
+        $max = Carbon::parse('2026-08-15 19:00:00');
+        $archive = [];
+        for ($i = 0; $i < 50; $i++) {
+            $archive[] = [
+                'idStacji' => 12424,
+                'termin' => $max->copy()->subHours($i)->format('Y-m-d H:i:s'),
+                'temp' => 10,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 2,
+                'zrodlo' => 'local',
+            ];
+        }
+        DB::table('z_depesze')->insert([
+            'idStacji' => 12424,
+            'termin' => '2026-08-15 19:00:00',
+            'temp' => 10,
+            'zjawiskoIkona' => 'N',
+            'zachmurzenie' => 2,
+        ]);
+        DB::table('z_depesze_archiwum')->insert($archive);
+        DB::table('z_uprawnieniadepesze')->insert([
+            'idKlienta' => $client->id,
+            'idStacji' => 12424,
+            'aktywna' => 1,
+            'lp' => 1,
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $html = $this->post('/klient/content', ['tab' => 'imgwMapNewTab'])->assertOk()->getContent();
+        preg_match('/id="imgw-map-frames">([^<]*)<\/script>/', $html, $match);
+        $frames = json_decode($match[1] ?? '', true);
+        $this->assertIsArray($frames);
+        $this->assertCount(24, $frames);
+        $this->assertSame('19:00', $frames[23]['hour']);
+        $this->assertSame('15.08.2026', $frames[23]['date']);
+        $oldest = $max->copy()->subHours(23);
+        $this->assertSame($oldest->format('G').':00', $frames[0]['hour']);
+        $this->assertSame($oldest->format('d.m.Y'), $frames[0]['date']);
+        $this->assertStringContainsString('id="imgw-map-limit"', $html);
+        $this->assertMatchesRegularExpression('/<option value="24"[^>]*selected/', $html);
+    }
+
+    public function test_map_limit_saves_to_company_profile(): void
+    {
+        $client = $this->makeClient(['mapaWarunkow' => 1, 'mapaOkresy' => 24]);
+        DB::table('z_listastacji')->insert([
+            'idStacji' => 12424,
+            'nazwaStacji' => 'Wrocław',
+            'region' => 'Dolnośląskie',
+            'aktywna' => 1,
+            'pozX' => 190,
+            'pozY' => 480,
+            'pozWX' => 480,
+            'pozWY' => 340,
+        ]);
+        $max = Carbon::parse('2026-08-15 19:00:00');
+        $archive = [];
+        for ($i = 0; $i < 40; $i++) {
+            $archive[] = [
+                'idStacji' => 12424,
+                'termin' => $max->copy()->subHours($i)->format('Y-m-d H:i:s'),
+                'temp' => 10,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 2,
+                'zrodlo' => 'local',
+            ];
+        }
+        DB::table('z_depesze')->insert([
+            'idStacji' => 12424,
+            'termin' => '2026-08-15 19:00:00',
+            'temp' => 10,
+            'zjawiskoIkona' => 'N',
+            'zachmurzenie' => 2,
+        ]);
+        DB::table('z_depesze_archiwum')->insert($archive);
+        DB::table('z_uprawnieniadepesze')->insert([
+            'idKlienta' => $client->id,
+            'idStacji' => 12424,
+            'aktywna' => 1,
+            'lp' => 1,
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $this->post('/klient/maplimit', ['limit' => 36])
+            ->assertOk()
+            ->assertJson(['ok' => true, 'limit' => 36]);
+        $this->assertSame(36, (int) Client::query()->find($client->id)->mapaOkresy);
+
+        $html = $this->post('/klient/content', ['tab' => 'imgwMapNewTab'])->assertOk()->getContent();
+        preg_match('/id="imgw-map-frames">([^<]*)<\/script>/', $html, $match);
+        $frames = json_decode($match[1] ?? '', true);
+        $this->assertIsArray($frames);
+        $this->assertCount(36, $frames);
+        $this->assertMatchesRegularExpression('/<option value="36"[^>]*selected/', $html);
     }
 
     public function test_map_new_playback_script_and_icon_size(): void
@@ -271,8 +397,11 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString('function stepImgwHour', $js);
         $this->assertStringContainsString('function bindImgwStep', $js);
         $this->assertStringContainsString('imgw-map-pause', $js);
+        $this->assertStringContainsString('function bindImgwJump', $js);
+        $this->assertStringContainsString('imgw-map-jump', $js);
         $this->assertStringContainsString('is-missing', $js);
-        $this->assertStringContainsString('frame.date', $js);
+        $this->assertStringContainsString('bindTooltip', $js);
+        $this->assertStringContainsString('imgw-pin-tip', $js);
 
         $css = file_get_contents(public_path('css/layout.css'));
         $this->assertIsString($css);
@@ -280,6 +409,14 @@ class ImgwContentTest extends TestCase
         $this->assertMatchesRegularExpression('/\.imgw-pin-icon\s*\{[^}]*background-size:\s*contain/s', $css);
         $this->assertStringContainsString('.imgw-map-step', $css);
         $this->assertStringContainsString('.imgw-map-pause-icon', $css);
+        $this->assertStringContainsString('.imgw-map-jump', $css);
+        $this->assertStringContainsString('.imgw-map-title', $css);
+        $this->assertStringContainsString('.imgw-map-limit', $css);
+        $this->assertStringContainsString('.imgw-pin-tip', $css);
+
+        $clientJs = file_get_contents(public_path('js/client.js'));
+        $this->assertIsString($clientJs);
+        $this->assertStringContainsString("klientUrl('/maplimit')", $clientJs);
     }
 
     public function test_table_new_tab_renders_datatable(): void

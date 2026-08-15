@@ -78,6 +78,12 @@ $(document).ready(function () {
         $('#ipAdmin').addClass('is-active');
         loadIpAdmin(klientUrl('/ipadmin'));
     });
+    $('#content').on('change', '#imgw-map-limit', function () {
+        var limit = parseInt(this.value, 10);
+        $.post(klientUrl('/maplimit'), { limit: limit }, function () {
+            loadContent('imgwMapNewTab');
+        });
+    });
     $('#content').on('submit', '.ipadmin-pane form', function (e) {
         e.preventDefault();
         loadIpAdmin(this.action, this.method || 'POST', $(this).serialize());

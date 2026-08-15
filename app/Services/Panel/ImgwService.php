@@ -129,7 +129,7 @@ class ImgwService
 
     public function mapLeaflet(): array
     {
-        $empty = ['actualHour' => '', 'actualDate' => '', 'night' => 0, 'points' => [], 'frames' => [], 'current' => 0];
+        $empty = ['actualHour' => '', 'actualDate' => '', 'night' => 0, 'points' => [], 'frames' => [], 'current' => 0, 'limit' => ImgwMap::PLAYBACK_DEFAULT];
         try {
             $raw = $this->mapDb();
             if (! is_array($raw) || isset($raw['error']) || empty($raw['rows'])) {
@@ -140,8 +140,8 @@ class ImgwService
             if ($maxTermin === '') {
                 return $empty;
             }
-            $since = Carbon::parse($maxTermin)->subHours(ImgwMap::PLAYBACK_HOURS)->format('Y-m-d H:i:s');
-            $history = $this->mapHistoryRows($since);
+            $limit = ImgwMap::playbackLimit(CustomerContext::get() ?: []);
+            $history = $this->mapHistoryRows($maxTermin, $limit);
             $frames = ImgwMap::frames($raw['rows'], $history, $maxTermin, CustomerContext::get() ?: []);
             $current = max(0, count($frames) - 1);
             $frame = $frames[$current] ?? [
@@ -158,6 +158,7 @@ class ImgwService
                 'points' => $frame['points'],
                 'frames' => $frames,
                 'current' => $current,
+                'limit' => $limit,
             ];
         } catch (Throwable $e) {
             report($e);
@@ -272,18 +273,47 @@ class ImgwService
         ];
     }
 
-    private function mapHistoryRows(string $since)
+    private function mapHistoryRows(?string $until = null, int $limit = ImgwMap::PLAYBACK_DEFAULT)
     {
         try {
-            return $this->mapRows($since, 'z_depesze_archiwum as d', true);
+            $since = $this->mapHistorySince('z_depesze_archiwum as d', true, $until, $limit);
+
+            return $this->mapRows($since, 'z_depesze_archiwum as d', true, $until);
         } catch (Throwable $e) {
             report($e);
+            $since = $this->mapHistorySince('z_depesze as d', false, $until, $limit);
 
-            return $this->mapRows($since);
+            return $this->mapRows($since, 'z_depesze as d', false, $until);
         }
     }
 
-    private function mapRows(?string $since = null, string $depesze = 'z_depesze as d', bool $skipInterp = false)
+    private function mapHistorySince(string $depesze, bool $skipInterp, ?string $until, int $limit): ?string
+    {
+        $customer = CustomerContext::get();
+        $query = DB::table('z_uprawnieniadepesze as ud')
+            ->join($depesze, 'ud.idStacji', '=', 'd.idStacji')
+            ->join('z_listastacji as ls', 'd.idstacji', '=', 'ls.idStacji')
+            ->where('ud.aktywna', 1)
+            ->where('ud.idKlienta', $customer['id'])
+            ->where('ls.aktywna', 1)
+            ->select('d.termin')
+            ->distinct()
+            ->orderByDesc('d.termin')
+            ->limit($limit);
+        if ($until) {
+            $query->where('d.termin', '<=', $until);
+        }
+        if ($skipInterp) {
+            $query->where(function ($q) {
+                $q->whereNull('d.zrodlo')->orWhere('d.zrodlo', '!=', 'interp');
+            });
+        }
+        $oldest = $query->pluck('termin')->last();
+
+        return $oldest ? (string) $oldest : $until;
+    }
+
+    private function mapRows(?string $since = null, string $depesze = 'z_depesze as d', bool $skipInterp = false, ?string $until = null)
     {
         $customer = CustomerContext::get();
         $query = DB::table('z_uprawnieniadepesze as ud')
@@ -295,10 +325,13 @@ class ImgwService
             ->orderBy('ud.lp')
             ->select([
                 'ls.nazwaStacji', 'd.temp', 'ls.pozY', 'ls.pozX', 'ls.pozWY', 'ls.pozWX',
-                'd.zjawiskoIkona', 'd.zjawisko', 'd.zachmurzenie', 'd.zjawiskoTXT', 'd.idStacji', 'd.termin',
+                'd.zjawiskoIkona', 'd.zjawisko', 'd.zachmurzenie', 'd.zjawiskoTXT', 'd.zachmurzenieTXT', 'd.idStacji', 'd.termin',
             ]);
         if ($since) {
             $query->where('d.termin', '>=', $since);
+        }
+        if ($until) {
+            $query->where('d.termin', '<=', $until);
         }
         if ($skipInterp) {
             $query->where(function ($q) {

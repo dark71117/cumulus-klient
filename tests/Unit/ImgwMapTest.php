@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Support\ImgwMap;
+use Carbon\Carbon;
 use Tests\TestCase;
 
 class ImgwMapTest extends TestCase
@@ -89,7 +90,7 @@ class ImgwMapTest extends TestCase
         $this->assertSame('16.08.2026', $frames[1]['date']);
     }
 
-    public function test_playback_ignores_stale_termins_beyond_12_hours(): void
+    public function test_playback_keeps_sparse_hours_within_limit(): void
     {
         $stale = $this->mapRow(12424, 'Wrocław', '2025-11-05 14:00:00', 1, 190, 480);
         $now = $this->mapRow(12424, 'Wrocław', '2026-08-15 15:00:00', 20, 190, 480);
@@ -97,13 +98,82 @@ class ImgwMapTest extends TestCase
             'geo_lat' => 51.1,
             'geo_lon' => 17.0,
         ]);
-        $this->assertCount(1, $frames);
-        $this->assertSame('15:00', $frames[0]['hour']);
-        $this->assertSame('15.08.2026', $frames[0]['date']);
+        $this->assertCount(2, $frames);
+        $this->assertSame('14:00', $frames[0]['hour']);
+        $this->assertSame('05.11.2025', $frames[0]['date']);
+        $this->assertSame('15:00', $frames[1]['hour']);
+        $this->assertSame('15.08.2026', $frames[1]['date']);
     }
 
-    private function mapRow(int $id, string $name, string $termin, float $temp, int $x, int $y): object
+    public function test_playback_keeps_only_last_48_hour_entries(): void
     {
+        $max = Carbon::parse('2026-08-15 15:00:00');
+        $rows = [];
+        for ($i = 0; $i < 50; $i++) {
+            $rows[] = $this->mapRow(
+                12424,
+                'Wrocław',
+                $max->copy()->subHours($i)->format('Y-m-d H:i:s'),
+                10,
+                190,
+                480
+            );
+        }
+        $frames = ImgwMap::frames($rows, $rows, '2026-08-15 15:00:00', [
+            'geo_lat' => 51.1,
+            'geo_lon' => 17.0,
+        ]);
+        $oldest = $max->copy()->subHours(23);
+        $this->assertCount(24, $frames);
+        $this->assertSame($oldest->format('G').':00', $frames[0]['hour']);
+        $this->assertSame($oldest->format('d.m.Y'), $frames[0]['date']);
+        $this->assertSame('15:00', $frames[23]['hour']);
+        $this->assertSame('15.08.2026', $frames[23]['date']);
+
+        $long = ImgwMap::frames($rows, $rows, '2026-08-15 15:00:00', [
+            'geo_lat' => 51.1,
+            'geo_lon' => 17.0,
+            'mapaOkresy' => 48,
+        ]);
+        $this->assertCount(48, $long);
+    }
+
+    public function test_playback_limit_clamps_to_allowed_range(): void
+    {
+        $this->assertSame(24, ImgwMap::playbackLimit([]));
+        $this->assertSame(24, ImgwMap::playbackLimit(['mapaOkresy' => 0]));
+        $this->assertSame(12, ImgwMap::playbackLimit(['mapaOkresy' => 12]));
+        $this->assertSame(48, ImgwMap::playbackLimit(['mapaOkresy' => 48]));
+        $this->assertSame(12, ImgwMap::playbackLimit(['mapaOkresy' => 3]));
+        $this->assertSame(48, ImgwMap::playbackLimit(['mapaOkresy' => 99]));
+    }
+
+    public function test_point_tooltip_prefers_phenomenon_then_clouds(): void
+    {
+        $rain = $this->mapRow(12424, 'Wrocław', '2026-08-15 19:00:00', 20, 190, 480, 'słaby deszcz', 'duże');
+        $cloud = $this->mapRow(12424, 'Wrocław', '2026-08-15 18:00:00', 18, 190, 480, '', 'małe');
+        $rainFrames = ImgwMap::frames([$rain], [$rain], '2026-08-15 19:00:00', [
+            'geo_lat' => 51.1,
+            'geo_lon' => 17.0,
+        ]);
+        $cloudFrames = ImgwMap::frames([$cloud], [$cloud], '2026-08-15 18:00:00', [
+            'geo_lat' => 51.1,
+            'geo_lon' => 17.0,
+        ]);
+        $this->assertSame('słaby deszcz', $rainFrames[0]['points'][0]['text']);
+        $this->assertSame('zachmurzenie małe', $cloudFrames[0]['points'][0]['text']);
+    }
+
+    private function mapRow(
+        int $id,
+        string $name,
+        string $termin,
+        float $temp,
+        int $x,
+        int $y,
+        string $zjawiskoTXT = '',
+        string $zachmurzenieTXT = ''
+    ): object {
         return (object) [
             'idStacji' => $id,
             'nazwaStacji' => $name,
@@ -113,7 +183,8 @@ class ImgwMapTest extends TestCase
             'pozY' => $y,
             'zjawiskoIkona' => 'N',
             'zachmurzenie' => 2,
-            'zjawiskoTXT' => '',
+            'zjawiskoTXT' => $zjawiskoTXT,
+            'zachmurzenieTXT' => $zachmurzenieTXT,
         ];
     }
 }

@@ -53,4 +53,16 @@ class ImgwTextTest extends TestCase
             ImgwText::plain('słaby &lt;span class="pogrubione"&gt;deszcz&lt;/span&gt; (ciągły)')
         );
     }
+
+    public function test_cloud_cover_adds_noun_when_needed(): void
+    {
+        $this->assertSame('bezchmurnie', ImgwText::cloudCover('bezchmurnie'));
+        $this->assertSame('niebo niewidoczne', ImgwText::cloudCover('niebo niewidoczne'));
+        $this->assertSame('zachmurzenie małe', ImgwText::cloudCover('Zachmurzenie małe'));
+        $this->assertSame('zachmurzenie małe', ImgwText::cloudCover('małe'));
+        $this->assertSame('zachmurzenie umiarkowane', ImgwText::cloudCover('umiarkowane'));
+        $this->assertSame('zachmurzenie duże', ImgwText::cloudCover('duże'));
+        $this->assertSame('zachmurzenie pełne', ImgwText::cloudCover('pełne'));
+        $this->assertSame('', ImgwText::cloudCover(''));
+    }
 }

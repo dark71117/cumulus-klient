@@ -1,7 +1,24 @@
 @if(!empty($data['points']) || !empty($data['frames']))
     <div class="imgw-map-new">
         <div class="imgw-dt-head imgw-map-header">
-            <div>
+            <div class="imgw-map-jump">
+                <div class="imgw-map-jump-title">Skok do godziny</div>
+                <div class="imgw-map-jump-row">
+                    <select id="imgw-map-jump" title="Wybierz godzinę" data-tip="Tryb ręczny: skok do wybranej godziny z bazy">
+                        @foreach(array_reverse($data['frames'] ?? [], true) as $idx => $frame)
+                            <option value="{{ $idx }}" @selected((int) $idx === (int) ($data['current'] ?? 0))>{{ trim(($frame['date'] ?? '').', '.($frame['hour'] ?? ''), ', ') }}</option>
+                        @endforeach
+                    </select>
+                    <label class="imgw-map-limit">Wstecz
+                        <select id="imgw-map-limit" title="Ile godzin wstecz" data-tip="Ile godzin wstecz wczytać z bazy. Zapisuje się w profilu firmy.">
+                            @foreach(\App\Support\ImgwMap::PLAYBACK_CHOICES as $n)
+                                <option value="{{ $n }}" @selected((int) $n === (int) ($data['limit'] ?? 24))>{{ $n }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                </div>
+            </div>
+            <div class="imgw-map-title">
                 <span class="imgw-dt-title">Warunki atmosferyczne o godzinie <span class="hour" id="imgw-map-hour">{{ $data['actualHour'] }}{{ !empty($data['actualDate']) ? ', '.$data['actualDate'] : '' }}</span></span>
                 <span class="imgw-dt-sub">(co 1 godzinę)</span>
             </div>

@@ -57,6 +57,7 @@ function initImgwLeaflet() {
     renderImgwHour(imgwHourIndex, false);
     bindImgwPlay();
     bindImgwStep();
+    bindImgwJump();
     syncImgwPlayButtons();
 
     function afterMask() {
@@ -108,6 +109,7 @@ function renderImgwHour(index, allowFit) {
         imgwMarkerLayer.bringToFront();
     }
     syncImgwStepButtons();
+    syncImgwJumpSelect();
     if (allowFit) {
         fitImgwMap();
     }
@@ -131,16 +133,30 @@ function imgwPointMarker(p, night) {
         '<div class="imgw-pin-name">' + escapeHtml(name) + '</div>' +
         '</div>';
     var width = Math.max(78, Math.min(140, name.length * 7 + 52));
-    return L.marker([p.lat, p.lon], {
+    var tip = name;
+    var text = String(p.text || '').trim();
+    if (missing) {
+        tip = name + ' — brak danych';
+    } else if (text) {
+        tip = name + ' — ' + text;
+    }
+    var marker = L.marker([p.lat, p.lon], {
         icon: L.divIcon({
             html: html,
             className: 'imgw-pin-marker',
             iconSize: [width, 72],
             iconAnchor: [width / 2, 36]
         }),
-        riseOnHover: true,
-        title: p.text ? name + ' — ' + p.text : name
+        riseOnHover: true
     });
+    marker.bindTooltip(tip, {
+        className: 'imgw-pin-tip',
+        direction: 'top',
+        offset: [0, -20],
+        opacity: 1,
+        sticky: true
+    });
+    return marker;
 }
 
 function fitImgwMap(fallbackBounds) {
@@ -203,6 +219,28 @@ function bindImgwStep() {
             stepImgwHour(parseInt(btn.getAttribute('data-dir'), 10) || 1, false);
         });
     });
+}
+
+function bindImgwJump() {
+    var sel = document.getElementById('imgw-map-jump');
+    if (!sel) {
+        return;
+    }
+    sel.addEventListener('change', function () {
+        var idx = parseInt(sel.value, 10);
+        if (isNaN(idx) || !imgwFrames[idx]) {
+            return;
+        }
+        stopImgwPlay();
+        renderImgwHour(idx, false);
+    });
+}
+
+function syncImgwJumpSelect() {
+    var sel = document.getElementById('imgw-map-jump');
+    if (sel) {
+        sel.value = String(imgwHourIndex);
+    }
 }
 
 function startImgwPlay(dir) {
