@@ -29,4 +29,53 @@ class ImgwMapTest extends TestCase
         $this->assertSame(20, $byId[1]->temp);
         $this->assertSame(8, $byId[2]->temp);
     }
+
+    public function test_hour_without_measurement_shows_bd_not_copied_icons(): void
+    {
+        $wroclaw18 = $this->mapRow(12424, 'Wrocław', '2026-08-15 18:00:00', 10, 190, 480);
+        $wroclaw19 = $this->mapRow(12424, 'Wrocław', '2026-08-15 19:00:00', 20, 190, 480);
+        $krakow19 = $this->mapRow(1, 'Kraków', '2026-08-15 19:00:00', 8, 120, 80);
+
+        $frames = ImgwMap::frames(
+            [$wroclaw19, $krakow19],
+            [$wroclaw18, $wroclaw19, $krakow19],
+            '2026-08-15 19:00:00',
+            ['geo_lat' => 51.1, 'geo_lon' => 17.0]
+        );
+
+        $this->assertCount(2, $frames);
+        $this->assertSame('18:00', $frames[0]['hour']);
+        $this->assertCount(2, $frames[0]['points']);
+        $this->assertCount(2, $frames[1]['points']);
+        $temps18 = array_column($frames[0]['points'], 'temp', 'name');
+        $temps19 = array_column($frames[1]['points'], 'temp', 'name');
+        $this->assertSame('10', $temps18['Wrocław']);
+        $this->assertSame('BD', $temps18['Kraków']);
+        $this->assertSame('20', $temps19['Wrocław']);
+        $this->assertSame('8', $temps19['Kraków']);
+        $krakow18 = null;
+        foreach ($frames[0]['points'] as $point) {
+            if ($point['name'] === 'Kraków') {
+                $krakow18 = $point;
+            }
+        }
+        $this->assertNotNull($krakow18);
+        $this->assertTrue($krakow18['missing']);
+        $this->assertSame('', $krakow18['icon']);
+    }
+
+    private function mapRow(int $id, string $name, string $termin, float $temp, int $x, int $y): object
+    {
+        return (object) [
+            'idStacji' => $id,
+            'nazwaStacji' => $name,
+            'termin' => $termin,
+            'temp' => $temp,
+            'pozX' => $x,
+            'pozY' => $y,
+            'zjawiskoIkona' => 'N',
+            'zachmurzenie' => 2,
+            'zjawiskoTXT' => '',
+        ];
+    }
 }

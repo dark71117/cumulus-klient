@@ -102,23 +102,27 @@ function renderImgwHour(index, allowFit) {
             imgwMarkerLayer.addLayer(marker);
         }
     });
+    if (imgwMarkerLayer.bringToFront) {
+        imgwMarkerLayer.bringToFront();
+    }
     if (allowFit) {
         fitImgwMap();
     }
 }
 
 function imgwPointMarker(p, night) {
-    if (!p.lat || !p.lon) {
+    if (p.lat == null || p.lon == null || p.lat === '' || p.lon === '') {
         return null;
     }
     var name = String(p.name || '');
-    var temp = p.temp === '' || p.temp === null ? '–' : String(p.temp);
-    var iconHtml = p.icon
+    var missing = !!p.missing;
+    var temp = missing ? 'BD' : (p.temp === '' || p.temp === null ? 'BD' : String(p.temp) + '°');
+    var iconHtml = (!missing && p.icon)
         ? '<span class="imgw-pin-icon"><img src="' + p.icon + '" alt=""></span>'
         : '';
-    var html = '<div class="imgw-pin' + (night ? ' is-night' : '') + '">' +
+    var html = '<div class="imgw-pin' + (night ? ' is-night' : '') + (missing ? ' is-missing' : '') + '">' +
         '<div class="imgw-pin-badge">' +
-        '<span class="imgw-pin-temp">' + temp + '°</span>' +
+        '<span class="imgw-pin-temp">' + temp + '</span>' +
         iconHtml +
         '</div>' +
         '<div class="imgw-pin-name">' + escapeHtml(name) + '</div>' +

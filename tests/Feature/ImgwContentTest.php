@@ -131,6 +131,9 @@ class ImgwContentTest extends TestCase
             ->assertSee('16.9')
             ->assertSee('wojewodztwa_pl.geojson')
             ->assertSee('imgw-map-header')
+            ->assertSee('imgw-dt-head')
+            ->assertSee('imgw-dt-title')
+            ->assertSee('(co 1 godzinę)')
             ->assertSee('id="imgw-map-hour"', false)
             ->assertSee('Automatyczne przewijanie')
             ->assertSee('Zwłoka')
@@ -142,14 +145,26 @@ class ImgwContentTest extends TestCase
     {
         $client = $this->makeClient(['mapaWarunkow' => 1]);
         DB::table('z_listastacji')->insert([
-            'idStacji' => 12424,
-            'nazwaStacji' => 'Wrocław',
-            'region' => 'Dolnośląskie',
-            'aktywna' => 1,
-            'pozX' => 190,
-            'pozY' => 480,
-            'pozWX' => 480,
-            'pozWY' => 340,
+            [
+                'idStacji' => 12424,
+                'nazwaStacji' => 'Wrocław',
+                'region' => 'Dolnośląskie',
+                'aktywna' => 1,
+                'pozX' => 190,
+                'pozY' => 480,
+                'pozWX' => 480,
+                'pozWY' => 340,
+            ],
+            [
+                'idStacji' => 1,
+                'nazwaStacji' => 'Kraków',
+                'region' => 'Małopolskie',
+                'aktywna' => 1,
+                'pozX' => 120,
+                'pozY' => 80,
+                'pozWX' => 200,
+                'pozWY' => 200,
+            ],
         ]);
         DB::table('z_depesze')->insert([
             [
@@ -166,12 +181,17 @@ class ImgwContentTest extends TestCase
                 'zjawiskoIkona' => 'N',
                 'zachmurzenie' => 3,
             ],
+            [
+                'idStacji' => 1,
+                'termin' => '2026-08-15 19:00:00',
+                'temp' => 8,
+                'zjawiskoIkona' => 'N',
+                'zachmurzenie' => 2,
+            ],
         ]);
         DB::table('z_uprawnieniadepesze')->insert([
-            'idKlienta' => $client->id,
-            'idStacji' => 12424,
-            'aktywna' => 1,
-            'lp' => 1,
+            ['idKlienta' => $client->id, 'idStacji' => 12424, 'aktywna' => 1, 'lp' => 1],
+            ['idKlienta' => $client->id, 'idStacji' => 1, 'aktywna' => 1, 'lp' => 2],
         ]);
         $this->actingAs($client);
         CustomerContext::put($client);
@@ -189,8 +209,18 @@ class ImgwContentTest extends TestCase
         $this->assertCount(2, $frames);
         $this->assertSame('18:00', $frames[0]['hour']);
         $this->assertSame('19:00', $frames[1]['hour']);
-        $this->assertSame('10', $frames[0]['points'][0]['temp']);
-        $this->assertSame('20', $frames[1]['points'][0]['temp']);
+        $this->assertCount(2, $frames[0]['points']);
+        $this->assertCount(2, $frames[1]['points']);
+        $temps18 = array_column($frames[0]['points'], 'temp', 'name');
+        $temps19 = array_column($frames[1]['points'], 'temp', 'name');
+        $this->assertSame('10', $temps18['Wrocław']);
+        $this->assertSame('BD', $temps18['Kraków']);
+        $this->assertSame('20', $temps19['Wrocław']);
+        $this->assertSame('8', $temps19['Kraków']);
+        $krakow18 = collect($frames[0]['points'])->firstWhere('name', 'Kraków');
+        $this->assertIsArray($krakow18);
+        $this->assertTrue($krakow18['missing']);
+        $this->assertSame('', $krakow18['icon']);
         $this->assertSame(1, (int) (preg_match('/data-current="1"/', $html)));
     }
 
@@ -200,7 +230,8 @@ class ImgwContentTest extends TestCase
         $this->assertIsString($js);
         $this->assertStringContainsString('function startImgwPlay', $js);
         $this->assertStringContainsString('function stepImgwHour', $js);
-        $this->assertStringContainsString('imgw-map-delay', $js);
+        $this->assertStringContainsString('is-missing', $js);
+        $this->assertStringContainsString("'BD'", $js);
 
         $css = file_get_contents(public_path('css/layout.css'));
         $this->assertIsString($css);

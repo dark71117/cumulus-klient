@@ -62,23 +62,100 @@ class ImgwMap
     {
         $lat = (float) ($customer['geo_lat'] ?? 52);
         $lon = (float) ($customer['geo_lon'] ?? 19);
-        $maxKey = Carbon::parse($maxTermin)->format('Y-m-d H:00:00');
-        $byHour = [];
-        foreach ($historyRows as $row) {
-            $key = Carbon::parse($row->termin)->format('Y-m-d H:00:00');
-            if ($key === $maxKey) {
-                continue;
-            }
-            $byHour[$key][] = $row;
-        }
-        ksort($byHour);
+        $byStation = self::rowsByStation($historyRows, $latestRows);
         $frames = [];
-        foreach ($byHour as $termin => $rows) {
-            $frames[] = self::frame($termin, $rows, $lat, $lon);
+        foreach (self::hourKeys($byStation, $maxTermin) as $termin) {
+            $frames[] = self::frameFromStations($termin, $byStation, $lat, $lon);
         }
-        $frames[] = self::frame($maxTermin, $latestRows, $lat, $lon);
 
         return $frames;
+    }
+
+    public static function rowsByStation(iterable $historyRows, iterable $latestRows): array
+    {
+        $byStation = [];
+        foreach ([$historyRows, $latestRows] as $set) {
+            foreach ($set as $row) {
+                $id = (int) $row->idStacji;
+                $key = (string) $row->termin;
+                $byStation[$id][$key] = $row;
+            }
+        }
+        foreach ($byStation as $id => $rows) {
+            ksort($byStation[$id]);
+        }
+
+        return $byStation;
+    }
+
+    public static function hourKeys(array $byStation, string $maxTermin): array
+    {
+        $max = Carbon::parse($maxTermin)->startOfHour();
+        $min = $max->copy();
+        foreach ($byStation as $rows) {
+            foreach ($rows as $row) {
+                $termin = Carbon::parse($row->termin)->startOfHour();
+                if ($termin->lt($min)) {
+                    $min = $termin;
+                }
+            }
+        }
+        $hours = [];
+        for ($hour = $min->copy(); $hour->lte($max); $hour->addHour()) {
+            $hours[] = $hour->format('Y-m-d H:00:00');
+        }
+
+        return $hours;
+    }
+
+    public static function rowAtHour(array $rows, string $hourKey): ?object
+    {
+        foreach ($rows as $row) {
+            if (Carbon::parse($row->termin)->format('Y-m-d H:00:00') === $hourKey) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    public static function missingPoint(object $row, bool $night): ?array
+    {
+        $point = self::point($row, $night);
+        if ($point === null) {
+            return null;
+        }
+        $point['temp'] = 'BD';
+        $point['icon'] = '';
+        $point['text'] = 'brak danych';
+        $point['missing'] = true;
+
+        return $point;
+    }
+
+    public static function frameFromStations(string $termin, array $byStation, float $lat, float $lon): array
+    {
+        $night = self::isNight($termin, $lat, $lon);
+        $hourKey = Carbon::parse($termin)->format('Y-m-d H:00:00');
+        $points = [];
+        foreach ($byStation as $rows) {
+            $match = self::rowAtHour($rows, $hourKey);
+            $anchor = $match ?? (reset($rows) ?: null);
+            if (! $anchor) {
+                continue;
+            }
+            $point = $match ? self::point($match, $night) : self::missingPoint($anchor, $night);
+            if ($point !== null) {
+                $points[] = $point;
+            }
+        }
+
+        return [
+            'hour' => Carbon::parse($termin)->format('G').':00',
+            'termin' => Carbon::parse($termin)->format('Y-m-d H:i:s'),
+            'night' => $night ? 1 : 0,
+            'points' => $points,
+        ];
     }
 
     public static function latestByStation(iterable $rows): array
@@ -92,24 +169,5 @@ class ImgwMap
         }
 
         return array_values($latest);
-    }
-
-    public static function frame(string $termin, iterable $rows, float $lat, float $lon): array
-    {
-        $night = self::isNight($termin, $lat, $lon);
-        $points = [];
-        foreach ($rows as $row) {
-            $point = self::point($row, $night);
-            if ($point !== null) {
-                $points[] = $point;
-            }
-        }
-
-        return [
-            'hour' => Carbon::parse($termin)->format('G').':00',
-            'termin' => Carbon::parse($termin)->format('Y-m-d H:i:s'),
-            'night' => $night ? 1 : 0,
-            'points' => $points,
-        ];
     }
 }

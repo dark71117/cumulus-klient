@@ -185,6 +185,7 @@ body.layout-app {
     min-height: 0;
     width: 100%;
     background: #e8f4fc;
+    border-radius: 12px;
 }
 .layout-app .imgw-leaflet .leaflet-tile-pane {
     filter: saturate(0.75) brightness(1.02);
@@ -412,6 +413,15 @@ body.layout-app {
     width: 36px;
     height: 36px;
 }
+.imgw-pin.is-missing .imgw-pin-badge {
+    background: rgba(236, 236, 236, .92);
+    border-color: rgba(0, 0, 0, .22);
+}
+.imgw-pin.is-missing .imgw-pin-temp {
+    color: #444;
+    font-size: 13px;
+    letter-spacing: .02em;
+}
 .imgw-pin-name {
     font: 700 11px/1.1 Verdana, sans-serif;
     color: #111;
@@ -612,23 +622,22 @@ body.layout-app {
     vertical-align: middle;
     border: 1px solid rgba(0, 0, 0, .25);
 }
-.layout-app .imgw-map-header {
-    display: grid;
-    grid-template-columns: minmax(228px, 1fr) auto minmax(228px, 1fr);
-    align-items: center;
-    gap: 8px;
-    min-height: 58px;
-    padding: 6px 10px;
-    flex-shrink: 0;
+.layout-app #content.has-map .imgw-map-new {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    padding: 14px 16px 12px;
     box-sizing: border-box;
+    background: #f4faf4;
 }
-.imgw-map-header-title {
-    justify-self: center;
-    text-align: center;
-    white-space: nowrap;
+.layout-app .imgw-map-header.imgw-dt-head {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-bottom: 10px;
 }
 .imgw-map-play {
-    justify-self: end;
     min-width: 220px;
     padding: 4px 8px 6px;
     border: 1px solid #8ec4e6;
