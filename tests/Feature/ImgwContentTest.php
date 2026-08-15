@@ -206,22 +206,26 @@ class ImgwContentTest extends TestCase
         $this->assertNotEmpty($match[1] ?? null);
         $frames = json_decode($match[1], true);
         $this->assertIsArray($frames);
-        $this->assertCount(2, $frames);
-        $this->assertSame('18:00', $frames[0]['hour']);
-        $this->assertSame('19:00', $frames[1]['hour']);
-        $this->assertCount(2, $frames[0]['points']);
-        $this->assertCount(2, $frames[1]['points']);
-        $temps18 = array_column($frames[0]['points'], 'temp', 'name');
-        $temps19 = array_column($frames[1]['points'], 'temp', 'name');
+        $this->assertCount(13, $frames);
+        $byHour = [];
+        foreach ($frames as $frame) {
+            $byHour[$frame['hour']] = $frame;
+        }
+        $this->assertSame('18:00', $byHour['18:00']['hour']);
+        $this->assertSame('19:00', $byHour['19:00']['hour']);
+        $this->assertCount(2, $byHour['18:00']['points']);
+        $this->assertCount(2, $byHour['19:00']['points']);
+        $temps18 = array_column($byHour['18:00']['points'], 'temp', 'name');
+        $temps19 = array_column($byHour['19:00']['points'], 'temp', 'name');
         $this->assertSame('10', $temps18['Wrocław']);
         $this->assertSame('BD', $temps18['Kraków']);
         $this->assertSame('20', $temps19['Wrocław']);
         $this->assertSame('8', $temps19['Kraków']);
-        $krakow18 = collect($frames[0]['points'])->firstWhere('name', 'Kraków');
+        $krakow18 = collect($byHour['18:00']['points'])->firstWhere('name', 'Kraków');
         $this->assertIsArray($krakow18);
         $this->assertTrue($krakow18['missing']);
         $this->assertSame('', $krakow18['icon']);
-        $this->assertSame(1, (int) (preg_match('/data-current="1"/', $html)));
+        $this->assertSame(1, (int) (preg_match('/data-current="12"/', $html)));
     }
 
     public function test_map_new_playback_script_and_icon_size(): void

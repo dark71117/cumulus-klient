@@ -23,7 +23,7 @@
             </div>
         </div>
         <div id="imgw-leaflet" class="imgw-leaflet" data-night="{{ (int) ($data['night'] ?? 0) }}" data-geojson="{{ asset('data/wojewodztwa_pl.geojson') }}" data-current="{{ (int) ($data['current'] ?? 0) }}"></div>
-        <script type="application/json" id="imgw-map-frames">@json($data['frames'] ?? [], JSON_UNESCAPED_UNICODE)</script>
+        <script type="application/json" id="imgw-map-frames">@json($data['frames'] ?? [], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)</script>
     </div>
 @else
     Brak danych

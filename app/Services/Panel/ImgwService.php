@@ -129,26 +129,35 @@ class ImgwService
 
     public function mapLeaflet(): array
     {
-        $raw = $this->mapDb();
         $empty = ['actualHour' => '', 'night' => 0, 'points' => [], 'frames' => [], 'current' => 0];
-        if (! is_array($raw) || isset($raw['error']) || empty($raw['rows'])) {
-            return is_array($raw) && isset($raw['error']) ? $raw : $empty;
+        try {
+            $raw = $this->mapDb();
+            if (! is_array($raw) || isset($raw['error']) || empty($raw['rows'])) {
+                return is_array($raw) && isset($raw['error']) ? $raw : $empty;
+            }
+
+            $maxTermin = (string) ($raw['actualDateTime'] ?? '');
+            if ($maxTermin === '') {
+                return $empty;
+            }
+            $since = Carbon::parse($maxTermin)->subHours(ImgwMap::PLAYBACK_HOURS)->format('Y-m-d H:i:s');
+            $history = $this->mapRows($since);
+            $frames = ImgwMap::frames($raw['rows'], $history, $maxTermin, CustomerContext::get() ?: []);
+            $current = max(0, count($frames) - 1);
+            $frame = $frames[$current] ?? ['hour' => $raw['actualHour'], 'night' => (int) $raw['night'], 'points' => []];
+
+            return [
+                'actualHour' => $frame['hour'],
+                'night' => (int) $frame['night'],
+                'points' => $frame['points'],
+                'frames' => $frames,
+                'current' => $current,
+            ];
+        } catch (Throwable $e) {
+            report($e);
+
+            return ['error' => 1];
         }
-
-        $maxTermin = (string) ($raw['actualDateTime'] ?? '');
-        $since = Carbon::parse($maxTermin)->subHours(24)->format('Y-m-d H:i:s');
-        $history = $this->mapRows($since);
-        $frames = ImgwMap::frames($raw['rows'], $history, $maxTermin, CustomerContext::get());
-        $current = max(0, count($frames) - 1);
-        $frame = $frames[$current] ?? ['hour' => $raw['actualHour'], 'night' => (int) $raw['night'], 'points' => []];
-
-        return [
-            'actualHour' => $frame['hour'],
-            'night' => (int) $frame['night'],
-            'points' => $frame['points'],
-            'frames' => $frames,
-            'current' => $current,
-        ];
     }
 
     private function tableDb(): array

@@ -43,18 +43,23 @@ class ImgwMapTest extends TestCase
             ['geo_lat' => 51.1, 'geo_lon' => 17.0]
         );
 
-        $this->assertCount(2, $frames);
-        $this->assertSame('18:00', $frames[0]['hour']);
-        $this->assertCount(2, $frames[0]['points']);
-        $this->assertCount(2, $frames[1]['points']);
-        $temps18 = array_column($frames[0]['points'], 'temp', 'name');
-        $temps19 = array_column($frames[1]['points'], 'temp', 'name');
+        $this->assertCount(ImgwMap::PLAYBACK_HOURS + 1, $frames);
+        $this->assertSame('7:00', $frames[0]['hour']);
+        $this->assertSame('19:00', $frames[ImgwMap::PLAYBACK_HOURS]['hour']);
+        $byHour = [];
+        foreach ($frames as $frame) {
+            $byHour[$frame['hour']] = $frame;
+        }
+        $this->assertCount(2, $byHour['18:00']['points']);
+        $this->assertCount(2, $byHour['19:00']['points']);
+        $temps18 = array_column($byHour['18:00']['points'], 'temp', 'name');
+        $temps19 = array_column($byHour['19:00']['points'], 'temp', 'name');
         $this->assertSame('10', $temps18['Wrocław']);
         $this->assertSame('BD', $temps18['Kraków']);
         $this->assertSame('20', $temps19['Wrocław']);
         $this->assertSame('8', $temps19['Kraków']);
         $krakow18 = null;
-        foreach ($frames[0]['points'] as $point) {
+        foreach ($byHour['18:00']['points'] as $point) {
             if ($point['name'] === 'Kraków') {
                 $krakow18 = $point;
             }
@@ -62,6 +67,19 @@ class ImgwMapTest extends TestCase
         $this->assertNotNull($krakow18);
         $this->assertTrue($krakow18['missing']);
         $this->assertSame('', $krakow18['icon']);
+    }
+
+    public function test_playback_ignores_stale_termins_beyond_12_hours(): void
+    {
+        $stale = $this->mapRow(12424, 'Wrocław', '2025-11-05 14:00:00', 1, 190, 480);
+        $now = $this->mapRow(12424, 'Wrocław', '2026-08-15 15:00:00', 20, 190, 480);
+        $frames = ImgwMap::frames([$now, $stale], [$now, $stale], '2026-08-15 15:00:00', [
+            'geo_lat' => 51.1,
+            'geo_lon' => 17.0,
+        ]);
+        $this->assertCount(ImgwMap::PLAYBACK_HOURS + 1, $frames);
+        $this->assertSame('3:00', $frames[0]['hour']);
+        $this->assertSame('15:00', $frames[ImgwMap::PLAYBACK_HOURS]['hour']);
     }
 
     private function mapRow(int $id, string $name, string $termin, float $temp, int $x, int $y): object

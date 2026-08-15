@@ -6,6 +6,7 @@ use Carbon\Carbon;
 
 class ImgwMap
 {
+    public const PLAYBACK_HOURS = 12;
     public static function cloudIcon(string $zjaw, mixed $clouds): string
     {
         if ($zjaw !== 'N' && $zjaw !== '' && $zjaw != -99) {
@@ -19,7 +20,10 @@ class ImgwMap
     public static function isNight(string $termin, float $lat, float $lon): bool
     {
         $ts = Carbon::parse($termin)->getTimestamp();
-        $sun = date_sun_info($ts, $lat, $lon);
+        $sun = @date_sun_info($ts, $lat, $lon);
+        if (! is_array($sun) || ! isset($sun['sunrise'], $sun['sunset'])) {
+            return false;
+        }
 
         return $ts <= $sun['sunrise'] || $ts >= $sun['sunset'];
     }
@@ -49,7 +53,7 @@ class ImgwMap
 
         return [
             'id' => (int) $row->idStacji,
-            'name' => $row->nazwaStacji,
+            'name' => (string) $row->nazwaStacji,
             'lat' => $coords[0],
             'lon' => $coords[1],
             'temp' => $temp,
@@ -88,18 +92,10 @@ class ImgwMap
         return $byStation;
     }
 
-    public static function hourKeys(array $byStation, string $maxTermin): array
+    public static function hourKeys(array $byStation, string $maxTermin, int $maxHours = self::PLAYBACK_HOURS): array
     {
         $max = Carbon::parse($maxTermin)->startOfHour();
-        $min = $max->copy();
-        foreach ($byStation as $rows) {
-            foreach ($rows as $row) {
-                $termin = Carbon::parse($row->termin)->startOfHour();
-                if ($termin->lt($min)) {
-                    $min = $termin;
-                }
-            }
-        }
+        $min = $max->copy()->subHours($maxHours);
         $hours = [];
         for ($hour = $min->copy(); $hour->lte($max); $hour->addHour()) {
             $hours[] = $hour->format('Y-m-d H:00:00');
