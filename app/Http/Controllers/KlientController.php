@@ -129,7 +129,9 @@ class KlientController extends Controller
             $tab === 'animationTab' => view('klient.partials.animation', ['data' => app(AnimationService::class)->files()])->render(),
             $tab === 'sunTab' => view('klient.partials.calendar', app(CalendarService::class)->data())->render(),
             $tab === 'imgwTab' => $this->imgwHtml(),
+            $tab === 'imgwTableNewTab' => $this->imgwTableNewHtml(),
             $tab === 'imgwMapTab' => $this->imgwMapHtml(),
+            $tab === 'imgwMapNewTab' => $this->imgwMapNewHtml(),
             $tab === 'gddkiaRegionTab' => $this->gddkiaCountiesHtml(),
             $tab === 'gddkiaRoadTab' => $this->gddkiaRoadsHtml(),
             $tab === 'forecast5Tab' => $this->meteomaxHtml(),
@@ -181,6 +183,16 @@ class KlientController extends Controller
         return view('klient.partials.imgw', ['data' => $data])->render();
     }
 
+    private function imgwTableNewHtml(): string
+    {
+        $data = app(ImgwService::class)->table();
+        if (isset($data['error'])) {
+            return view('klient.partials.critical')->render();
+        }
+
+        return view('klient.partials.imgw-table-new', ['data' => $data])->render();
+    }
+
     private function imgwMapHtml(): string
     {
         $data = app(ImgwService::class)->map();
@@ -189,6 +201,16 @@ class KlientController extends Controller
         }
 
         return view('klient.partials.imgw-map', ['data' => $data])->render();
+    }
+
+    private function imgwMapNewHtml(): string
+    {
+        $data = app(ImgwService::class)->mapLeaflet();
+        if (isset($data['error'])) {
+            return view('klient.partials.critical')->render();
+        }
+
+        return view('klient.partials.imgw-map-new', ['data' => $data])->render();
     }
 
     private function gddkiaCountiesHtml(): string

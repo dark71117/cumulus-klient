@@ -1,19 +1,9 @@
-var refreshOffset = 3;
 var menuPosition = 0;
 var loading = 0;
-var firstTab = { weatherTabs: '', actualTabs: '' };
 var autoLoading = 0;
 var ajaxRequest;
 var tabStatus = { forecast1Tab: 0, forecast2Tab: 0, forecast3Tab: 0, forecast4Tab: 0, warningTab: 0 };
 var loadingDiv, ajaxLoaderDiv, contentDiv, contentDivHeight;
-
-function showSubNav() {
-    var ids = Array.prototype.slice.call(arguments);
-    $('.tabs_frame > .tabs2').removeClass('is-open');
-    ids.forEach(function (id) {
-        if (id) $('#' + id).addClass('is-open');
-    });
-}
 
 function klientUrl(path) {
     return (window.klientBase || '/klient') + path;
@@ -23,16 +13,12 @@ $(document).ready(function () {
     loadingDiv = $('#loading');
     ajaxLoaderDiv = $('#ajax_loader');
     contentDiv = $('#content');
-    $(document).everyTime(60000, function () {
-        setWeatherTabs();
-        getTabStatus();
-    });
+    $(document).everyTime(60000, getTabStatus);
     $(document).everyTime(50000, function () {
         var m = new Date().getMinutes();
         if ([3, 13, 23, 33, 43, 53].indexOf(m) !== -1) {
             autoLoading = 1;
-            if (['forecast1Tab', 'forecast2Tab', 'forecast3Tab', 'forecast4Tab', 'imgwTab', 'imgwMapTab',
-                'gddkiaRegionTab', 'gddkiaRoadTab', 'satPhotoTab', 'europeSatTab', 'polandSatTab', 'warningTab'].indexOf(menuPosition) !== -1) {
+            if (['imgwTab', 'imgwTableNewTab', 'imgwMapTab', 'imgwMapNewTab', 'gddkiaRegionTab', 'gddkiaRoadTab', 'warningTab'].indexOf(menuPosition) !== -1) {
                 loadContent(menuPosition);
             }
         }
@@ -86,8 +72,8 @@ $(document).ready(function () {
     });
     $('input#ipAdmin').click(function () {
         stopLoadingContent();
-        $('#mainTabs > div.t1b').removeClass('t1b');
-        showSubNav();
+        clearNavActive();
+        $('#addonsTabs').removeClass('is-open');
         menuPosition = 'ipAdminTab';
         $('#ipAdmin').addClass('is-active');
         loadIpAdmin(klientUrl('/ipadmin'));
@@ -106,177 +92,105 @@ $(document).ready(function () {
     });
 
     $('#mainTabs > div').click(function () {
+        var id = $(this).attr('id');
+        $('#ipAdmin').removeClass('is-active');
+        if (id === 'addonsTab') {
+            $('#addonsTabs').toggleClass('is-open');
+            return;
+        }
+        stopLoadingContent();
+        destroyImgwLeaflet();
+        destroyImgwDataTable();
+        contentDiv.removeClass('has-map');
         contentDiv.html('');
+        $('#addonsTabs').removeClass('is-open');
+        clearNavActive();
+        $(this).addClass('t1b');
+        menuPosition = id;
+        loadContent(menuPosition);
+        setContentDivHeight();
+        setTabStatus();
+    });
+
+    $('#addonsTabs').on('click', '.nav-btn:not(.nav-ext)', function () {
+        var id = $(this).attr('id');
         stopLoadingContent();
         $('#ipAdmin').removeClass('is-active');
-        showSubNav();
         $('#mainTabs > div.t1b').removeClass('t1b');
-        $(this).addClass('t1b');
-        setContentDivHeight(135);
-        switch ($(this).attr('id')) {
-            case 'forecastTab':
-                showSubNav('forecastTabs');
-                $('#forecastTabs > div.t2b').removeClass('t2b').addClass('t2a');
-                $('#' + firstTab.weatherTabs).removeClass('t2a').addClass('t2b');
-                tabStatus[firstTab.weatherTabs] = 0;
-                menuPosition = firstTab.weatherTabs;
-                break;
-            case 'actualTab':
-                showSubNav('actualTabs');
-                $('#actualTabs > div.t2b').removeClass('t2b').addClass('t2a');
-                $('#' + firstTab.actualTabs).removeClass('t2a').addClass('t2b');
-                menuPosition = firstTab.actualTabs;
-                break;
-            case 'calendarTab':
-                showSubNav('calendarTabs');
-                $('#sunTab').removeClass('t2a').addClass('t2b');
-                menuPosition = 'sunTab';
-                break;
-            case 'warningTab':
-                setContentDivHeight(101);
-                menuPosition = 'warningTab';
-                $(this).removeClass('t1c').addClass('t1a').addClass('t1b');
-                tabStatus.warningTab = 0;
-                break;
+        $('#addonsTab').addClass('t1b');
+        $('#addonsTabs').addClass('is-open');
+        $('#addonsTabs .t2b').removeClass('t2b').addClass('t2a');
+        $(this).addClass('t2b');
+        if (id === 'calendarTab') {
+            menuPosition = 'sunTab';
+        } else {
+            menuPosition = id;
+        }
+        if (id === 'warningTab') {
+            $(this).removeClass('t1c');
+            tabStatus.warningTab = 0;
+            setTabStatus();
         }
         loadContent(menuPosition);
-        setTabStatus();
+        setContentDivHeight();
     });
 
-    $('#forecastTabs > div').click(function () {
-        stopLoadingContent();
-        $('#forecastTabs > div.t2b').removeClass('t2b').addClass('t2a');
-        $(this).addClass('t2b');
-        menuPosition = $(this).attr('id');
-        if (menuPosition === 'archiveTab') {
-            showSubNav('forecastTabs', 'archiveTabs');
-            setContentDivHeight(169);
-        } else {
-            showSubNav('forecastTabs');
-            setContentDivHeight(135);
-        }
-        loadContent(menuPosition);
-        setTabStatus();
-    });
-    $('#archiveTabs > div').click(function () {
-        stopLoadingContent();
-        $('#archiveTabs > div.t5b').removeClass('t5b').addClass('t5a');
-        $(this).removeClass('t5a').addClass('t5b');
-        menuPosition = $(this).attr('id');
-        loadContent(menuPosition);
-    });
-    $('#actualTabs > div').click(function () {
-        stopLoadingContent();
-        $('#actualTabs > div.t2b').removeClass('t2b').addClass('t2a');
-        $(this).addClass('t2b');
-        menuPosition = $(this).attr('id');
-        if (menuPosition === 'satPhotoTab') {
-            showSubNav('actualTabs', 'satTabs');
-            contentDiv.html('');
-            setContentDivHeight(169);
-        } else if (menuPosition === 'radarTab') {
-            showSubNav('actualTabs');
-            contentDiv.html('<br><br>Przejdź do strony z aktualnym obrazem radarowym.<br><a href="https://www.rainviewer.com/" target="_blank">https://www.rainviewer.com/</a><br><br>Przejdź do strony z aktualnymi wyładowaniami.<br><a href="https://www.blitzortung.org/en/live_lightning_maps.php?map=15" target="_blank">https://www.blitzortung.org</a>');
-            setContentDivHeight(135);
-        } else {
-            showSubNav('actualTabs');
-            loadContent(menuPosition);
-            setContentDivHeight(menuPosition === 'imgwMapTab' ? 59 : 135);
-        }
-    });
-    $('#calendarTabs > div').click(function () {
-        stopLoadingContent();
-        $('#calendarTabs > div.t2b').removeClass('t2b').addClass('t2a');
-        $(this).addClass('t2b');
-        if ($(this).attr('id') === 'sunTab') {
-            menuPosition = 'sunTab';
-            loadContent(menuPosition);
-        } else if ($(this).attr('id') === 'cloudsTab') {
-            window.open('http://www.cumulus.nazwa.pl/atlas/');
-        } else {
-            window.open('http://www.cumulus.nazwa.pl/teoria/');
-        }
-    });
-    $('#satTabs > div').click(function () {
-        stopLoadingContent();
-        $('#satTabs > div.t5b').removeClass('t5b').addClass('t5a');
-        $(this).removeClass('t5a').addClass('t5b');
-        var src = $(this).attr('id') === 'europeSatTab'
-            ? 'https://api.sat24.com/animated/PL/infraPolair/3/Coordinated%20Universal%20Time/567700'
-            : 'https://api.sat24.com/animated/PL/visual/3/Coordinated%20Universal%20Time/4368611';
-        contentDiv.html('<br><br><a href="https://www.sat24.com/pl" target="sat24"><img id="satImage" src="' + src + '" width="845" height="615"></a>');
-    });
     $(window).resize(function () {
         if (contentDivHeight > 0) setContentDivHeight(contentDivHeight);
+        if (imgwLeafletMap) {
+            imgwLeafletMap.invalidateSize();
+        }
+        fitActualMap();
     });
-    setWeatherTabs();
     setActualTabs();
     getTabStatus();
+    openTableOnStart();
 });
 
-function setWeatherTabs() {
-    $.ajax({ cache: false, type: 'POST', url: klientUrl('/weathertabs'), dataType: 'json',
-        success: function (tabs) {
-            firstTab.weatherTabs = '';
-            var counter = 1;
-            for (var key in tabs) {
-                if (tabs[key].title) {
-                    $('#' + key + ' > div.desc').html('Prognoza ' + tabs[key].title);
-                }
-                if (tabs[key].active === 1) {
-                    $('#' + key).show();
-                    if (!firstTab.weatherTabs) firstTab.weatherTabs = key;
-                    counter++;
-                } else {
-                    $('#' + key).hide();
-                }
-            }
-            if (!firstTab.weatherTabs) firstTab.weatherTabs = 'archiveTab';
-        }
-    });
+function clearNavActive() {
+    $('#mainTabs > div.t1b').removeClass('t1b');
+    $('#addonsTabs .t2b').removeClass('t2b').addClass('t2a');
 }
 
 function setActualTabs() {
     $.ajax({ cache: false, type: 'POST', url: klientUrl('/actualtabs'), dataType: 'json',
         success: function (tabs) {
-            firstTab.actualTabs = '';
-            for (var key in tabs) {
+            ['imgwTab', 'imgwTableNewTab', 'imgwMapTab', 'imgwMapNewTab', 'gddkiaRegionTab', 'gddkiaRoadTab'].forEach(function (key) {
+                if (!tabs[key]) return;
                 if (tabs[key].active === 1) {
-                    $('#' + key).show();
-                    if (!firstTab.actualTabs) firstTab.actualTabs = key;
+                    $('#' + key).removeClass('hidden');
                 } else {
-                    $('#' + key).hide();
+                    $('#' + key).addClass('hidden');
                 }
-            }
-            if (!firstTab.actualTabs) firstTab.actualTabs = 'radarTab';
-            openActualWeatherOnStart();
+            });
         }
     });
 }
 
-function openActualWeatherOnStart() {
-    if ($('.tabs_frame').hasClass('hidden') || $('#actualTab').hasClass('t1b')) {
+function openTableOnStart() {
+    if ($('.tabs_frame').hasClass('hidden')) {
         return;
     }
-    $('#actualTab').trigger('click');
+    if (!$('#imgwTab').hasClass('hidden')) {
+        $('#imgwTab').trigger('click');
+    } else if (!$('#imgwMapTab').hasClass('hidden')) {
+        $('#imgwMapTab').trigger('click');
+    }
 }
 
 function setTabStatus() {
-    var forecastTab = 0;
-    for (var key in tabStatus) {
-        if (key === 'warningTab') {
-            if (tabStatus[key] === 1) $('#warningTab').show().removeClass('t1a').addClass('t1c');
-            else if (tabStatus[key] === 0) $('#warningTab').show().removeClass('t1c').addClass('t1a');
-            else $('#warningTab').hide();
-        } else if (tabStatus[key] == 1) {
-            $('#' + key + ' .circle_small').show();
-            forecastTab = 1;
-        } else {
-            $('#' + key + ' .circle_small').hide();
+    var $warning = $('#warningTab');
+    $('#addonsTab').toggleClass('has-warning', tabStatus.warningTab === 1);
+    if (tabStatus.warningTab === 1) {
+        $warning.removeClass('hidden t2a t2b').addClass('t1c');
+    } else if (tabStatus.warningTab === 0) {
+        $warning.removeClass('hidden t1c');
+        if (!$warning.hasClass('t2b')) {
+            $warning.addClass('t2a');
         }
+    } else {
+        $warning.addClass('hidden');
     }
-    if (forecastTab === 1) $('#forecastTab .circle').css('display', 'inline-block');
-    else $('#forecastTab .circle').hide();
 }
 
 function getTabStatus() {
@@ -299,7 +213,21 @@ function loadContent(tab, position) {
             var hint = status === 'timeout' ? 'Przekroczono czas oczekiwania.' : 'Kod: ' + (xhr && xhr.status ? xhr.status : '');
             contentDiv.html('Podczas ładowania strony wystąpił błąd. ' + hint + '<br>Spróbuj ponownie klikając wybraną zakładkę.');
         },
-        success: function (html) { contentDiv.html(html); },
+        success: function (html) {
+            destroyImgwLeaflet();
+            destroyImgwDataTable();
+            contentDiv.html(html);
+            var hasLeaflet = contentDiv.find('#imgw-leaflet').length > 0;
+            var hasClassic = contentDiv.find('.actualMapStage').length > 0;
+            contentDiv.toggleClass('has-map', hasLeaflet || hasClassic);
+            if (hasLeaflet) {
+                initImgwLeaflet();
+            } else if (hasClassic) {
+                fitActualMap();
+            } else if (contentDiv.find('#imgw-datatable').length) {
+                initImgwDataTable();
+            }
+        },
         complete: hideLoading
     });
 }
@@ -339,6 +267,9 @@ function loadIpAdmin(url, method, data) {
             contentDiv.html('Nie udało się otworzyć administracji IP.');
         },
         success: function (html) {
+            destroyImgwLeaflet();
+            destroyImgwDataTable();
+            contentDiv.removeClass('has-map');
             contentDiv.html(html);
             setContentDivHeight();
         },
@@ -355,4 +286,46 @@ function setContentDivHeight(offset) {
         }
     }
     contentDiv.height($(window).height() - (offset || 100));
+}
+
+function fitActualMap() {
+    var $map = contentDiv.find('.actualMap');
+    var $stage = contentDiv.find('.actualMapStage');
+    if (!$map.length || !$stage.length) {
+        return;
+    }
+    var $img = $map.find('img.map');
+    var apply = function () {
+        var nw = ($img[0] && $img[0].naturalWidth) || $img.width();
+        var nh = ($img[0] && $img[0].naturalHeight) || $img.height();
+        if (!nw || !nh) {
+            return;
+        }
+        var padTop = 10;
+        var boxW = nw;
+        var boxH = nh + padTop;
+        $map.css({ width: boxW + 'px', height: boxH + 'px' });
+        var scale = Math.min($stage.width() / boxW, $stage.height() / boxH);
+        if (!isFinite(scale) || scale <= 0) {
+            scale = 1;
+        }
+        $map.css({
+            transform: 'scale(' + scale + ')',
+            transformOrigin: 'top left',
+            marginRight: (boxW * (scale - 1)) + 'px',
+            marginBottom: (boxH * (scale - 1)) + 'px'
+        });
+    };
+    var whenReady = function () {
+        if ($img.length && $img[0].complete && $img[0].naturalWidth) {
+            apply();
+        } else {
+            $img.off('load.fitMap').on('load.fitMap', apply);
+        }
+    };
+    if (window.requestAnimationFrame) {
+        requestAnimationFrame(whenReady);
+    } else {
+        whenReady();
+    }
 }

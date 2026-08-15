@@ -67,10 +67,11 @@ class MenuTabsService
         $customer = CustomerContext::get();
         $types = [
             'imgwTab' => 'IMGW',
+            'imgwTableNewTab' => 'IMGW',
             'imgwMapTab' => 'mapaWarunkow',
+            'imgwMapNewTab' => 'mapaWarunkow',
             'gddkiaRegionTab' => 'GDDKIAwoj',
             'gddkiaRoadTab' => 'GDDKIAdrogi',
-            'satPhotoTab' => 'zdjeciaSat',
         ];
         $result = [];
         foreach ($types as $selector => $acl) {

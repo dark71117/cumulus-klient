@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cumulus - serwis pogodowy</title>
-    <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=6">
-    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=8">
+    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=6">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.3/css/buttons.dataTables.min.css">
 </head>
 <body class="layout-app">
 @php
@@ -28,24 +31,24 @@
             Serwis pogodowy Biura Prognoz Cumulus, wyłączność strony dla
             <span class="blue">{{ $barCustomer['nazwa'] ?? '' }}</span>
         </div>
-        @if($showAdminBar)
-            <div class="admin sidebar-admin">
-                <div class="admin-label">Tryb administracyjny</div>
-                <label class="admin-select-label" for="customers">Klient</label>
-                <select id="customers" title="Wybierz firmę, której panel chcesz podejrzeć">
-                    <option value="0"></option>
-                    @foreach($clientsList as $id => $name)
-                        <option value="{{ $id }}" @selected(($barCustomer['id'] ?? 0) == $id)>{{ $name }}</option>
-                    @endforeach
-                </select>
-                <input type="button" class="button" id="loadPage" value="Załaduj stronę" title="Wczytaj panel wybranego klienta" data-tip="Wczytaj panel wybranego klienta">
-                <input type="button" class="button" id="ipAdmin" value="Administracja IP" title="Ograniczenia logowania według adresów IP" data-tip="Ograniczenia logowania według adresów IP">
-            </div>
-        @endif
         <div class="sidebar-nav">
             @yield('nav')
         </div>
         <div class="sidebar-footer">
+            @if($showAdminBar)
+                <div class="admin sidebar-admin sidebar-admin-island">
+                    <div class="admin-label">Tryb administracyjny</div>
+                    <label class="admin-select-label" for="customers">Klient</label>
+                    <select id="customers" title="Wybierz firmę, której panel chcesz podejrzeć">
+                        <option value="0"></option>
+                        @foreach($clientsList as $id => $name)
+                            <option value="{{ $id }}" @selected(($barCustomer['id'] ?? 0) == $id)>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                    <input type="button" class="button" id="loadPage" value="Załaduj stronę" title="Wczytaj panel wybranego klienta" data-tip="Wczytaj panel wybranego klienta">
+                    <input type="button" class="button" id="ipAdmin" value="Administracja IP" title="Ograniczenia logowania według adresów IP" data-tip="Ograniczenia logowania według adresów IP">
+                </div>
+            @endif
             <button type="submit" form="logout" class="btn-3d btn-logout" id="logoutBtn" title="Zakończ sesję i wróć do logowania" data-tip="Zakończ sesję i wróć do logowania">Wyloguj</button>
         </div>
     </aside>
@@ -70,7 +73,16 @@
     $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
     window.klientBase = @json(url('/klient'));
 </script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.datatables.net/2.3.2/js/dataTables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.3/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.3/js/buttons.html5.min.js"></script>
 <script src="{{ asset('js/timer.js') }}"></script>
-<script src="{{ asset('js/client.js') }}?v=7"></script>
+<script src="{{ asset('js/imgw-map.js') }}?v=2"></script>
+<script src="{{ asset('js/imgw-table.js') }}?v=1"></script>
+<script src="{{ asset('js/client.js') }}?v=11"></script>
 </body>
 </html>

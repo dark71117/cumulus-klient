@@ -87,6 +87,74 @@ class PanelContentTest extends TestCase
         $this->post('/klient/content', ['tab' => 'gddkiaRoadTab'])->assertOk();
     }
 
+    public function test_panel_menu_starts_with_table_map_and_addons(): void
+    {
+        $client = $this->makeClient([
+            'IMGW' => 1,
+            'mapaWarunkow' => 1,
+            'GDDKIAwoj' => 1,
+            'GDDKIAdrogi' => 1,
+            'ostrzezeniaTXT' => 1,
+            'zdjeciaSat' => 1,
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $page = $this->get('/klient')->assertOk();
+        $html = $page->getContent();
+        $this->assertStringContainsString('id="imgwTab"', $html);
+        $this->assertStringContainsString('>Tabela</div>', $html);
+        $this->assertStringContainsString('id="imgwTableNewTab"', $html);
+        $this->assertStringContainsString('>Tabela NEW</div>', $html);
+        $this->assertStringContainsString('imgw-table.js', $html);
+        $this->assertStringContainsString('>Mapa</div>', $html);
+        $this->assertStringContainsString('>Mapa NEW</div>', $html);
+        $this->assertStringContainsString('id="imgwMapNewTab"', $html);
+        $this->assertStringContainsString('>Dodatki</div>', $html);
+        $this->assertStringContainsString('https://meteomax.pl', $html);
+        $this->assertStringContainsString('https://meteomax.eu', $html);
+        $this->assertStringContainsString('target="_blank"', $html);
+        $this->assertStringNotContainsString('id="forecastTab"', $html);
+        $this->assertStringNotContainsString('Zdjęcia satelitarne', $html);
+        $this->assertStringNotContainsString('Radar / Burze', $html);
+        $this->assertStringNotContainsString('id="satPhotoTab"', $html);
+        $this->assertStringNotContainsString('id="radarTab"', $html);
+        $this->assertStringNotContainsString('Atlas chmur', $html);
+        $this->assertStringNotContainsString('Teoria meteorologii', $html);
+        $this->assertLessThan(
+            strpos($html, 'id="imgwTableNewTab"'),
+            strpos($html, 'id="imgwTab"')
+        );
+        $this->assertLessThan(
+            strpos($html, 'id="imgwMapTab"'),
+            strpos($html, 'id="imgwTableNewTab"')
+        );
+        $this->assertLessThan(
+            strpos($html, 'id="imgwMapNewTab"'),
+            strpos($html, 'id="imgwMapTab"')
+        );
+        $this->assertLessThan(
+            strpos($html, 'id="addonsTab"'),
+            strpos($html, 'id="imgwMapNewTab"')
+        );
+    }
+
+    public function test_actual_tabs_omit_satellite_and_radar(): void
+    {
+        $client = $this->makeClient(['IMGW' => 1, 'zdjeciaSat' => 1]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $tabs = app(\App\Services\Panel\MenuTabsService::class)->actualTabs();
+        $this->assertArrayHasKey('imgwTab', $tabs);
+        $this->assertArrayHasKey('imgwTableNewTab', $tabs);
+        $this->assertArrayHasKey('imgwMapTab', $tabs);
+        $this->assertArrayHasKey('imgwMapNewTab', $tabs);
+        $this->assertArrayNotHasKey('satPhotoTab', $tabs);
+        $this->assertSame(1, $tabs['imgwTab']['active']);
+        $this->assertSame(1, $tabs['imgwTableNewTab']['active']);
+    }
+
     public function test_meteomax_disabled_shows_link(): void
     {
         $client = $this->makeClient(['mapaPrognozy' => 1]);
@@ -125,6 +193,16 @@ class PanelContentTest extends TestCase
         CustomerContext::put($admin);
 
         $this->get('/klient/ipadmin')->assertOk()->assertSee('adresów IP');
+    }
+
+    public function test_admin_bar_is_above_logout(): void
+    {
+        $admin = $this->makeClient(['login' => 'admin', 'nazwa' => 'admin']);
+        $this->actingAs($admin);
+        CustomerContext::put($admin);
+
+        $html = $this->get('/klient')->assertOk()->assertSee('sidebar-admin-island')->getContent();
+        $this->assertLessThan(strpos($html, 'id="logoutBtn"'), strpos($html, 'sidebar-admin-island'));
     }
 
     public function test_ipadmin_ajax_stays_as_fragment(): void

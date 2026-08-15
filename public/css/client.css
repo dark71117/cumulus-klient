@@ -620,6 +620,9 @@ select#customers {
     height: 760px;
     position: relative;
 }
+.actualMap img.map {
+    display: block;
+}
 .actualMap .city, .actualMap .tempPositive, .actualMap .tempNegative, .actualMap .icon, .actualMap .icon2 {
     position: absolute;
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Panel;
 
 use App\Support\CustomerContext;
+use App\Support\ImgwStationCoords;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -118,6 +119,55 @@ class ImgwService
                 $item['icon2'] = ['x' => $pozX + $xx + 40, 'y' => $pozY + $yy - 22, 'value' => 'w'.$zjaw[1].'.png'];
             }
             $result['rows'][$row->idStacji] = $item;
+        }
+
+        return $result;
+    }
+
+    public function mapLeaflet(): array
+    {
+        $raw = $this->mapDb();
+        if (! is_array($raw) || isset($raw['error']) || empty($raw['rows'])) {
+            return is_array($raw) && isset($raw['error'])
+                ? $raw
+                : ['actualHour' => '', 'night' => 0, 'points' => []];
+        }
+
+        $result = [
+            'actualHour' => $raw['actualHour'],
+            'night' => (int) $raw['night'],
+            'points' => [],
+        ];
+        foreach ($raw['rows'] as $row) {
+            $coords = ImgwStationCoords::latLon(
+                (int) $row->idStacji,
+                (int) $row->pozX,
+                (int) $row->pozY
+            );
+            if ($coords === null) {
+                continue;
+            }
+            $temp = ($row->temp !== null && $row->temp != -99) ? number_format((float) $row->temp, 0) : '';
+            if ($temp === '-0') {
+                $temp = '0';
+            }
+            $zjaw = explode(';', (string) $row->zjawiskoIkona);
+            $ikona = $this->cloudIcon($zjaw[0] ?? 'N', $row->zachmurzenie);
+            if ((int) $raw['night'] === 1 && $ikona) {
+                $night = 'n'.$ikona;
+                if (file_exists(public_path('images/ikony2/'.$night))) {
+                    $ikona = $night;
+                }
+            }
+            $result['points'][] = [
+                'id' => (int) $row->idStacji,
+                'name' => $row->nazwaStacji,
+                'lat' => $coords[0],
+                'lon' => $coords[1],
+                'temp' => $temp,
+                'icon' => $ikona ? asset('images/ikony2/'.$ikona) : '',
+                'text' => (string) ($row->zjawiskoTXT ?? ''),
+            ];
         }
 
         return $result;
