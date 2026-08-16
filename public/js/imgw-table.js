@@ -2,6 +2,13 @@ var imgwDtTables = [];
 var imgwDtSyncingOrder = false;
 
 function destroyImgwDataTable() {
+    stopImgwTablePlay();
+    destroyImgwTableInstances();
+    imgwTableFrames = [];
+    imgwTableHourIndex = 0;
+}
+
+function destroyImgwTableInstances() {
     imgwDtTables.forEach(function (api) {
         var node = api && api.table && api.table().node();
         if (node && $.fn.dataTable && $.fn.dataTable.isDataTable(node)) {
@@ -14,6 +21,7 @@ function destroyImgwDataTable() {
             $(this).DataTable().destroy();
         }
     });
+    $('.imgw-table-new .imgw-dt-export').empty();
 }
 
 function initImgwDataTable() {
@@ -22,9 +30,24 @@ function initImgwDataTable() {
     if (!$root.length || !$.fn.DataTable) {
         return;
     }
-    var hour = $root.attr('data-hour') || '';
-    var title = 'Warunki atmosferyczne o godzinie ' + hour;
+    imgwTableFrames = parseImgwTableFrames();
+    imgwTableHourIndex = parseInt($root.attr('data-current') || String(imgwTableFrames.length - 1), 10);
+    if (imgwTableHourIndex < 0 || imgwTableHourIndex >= imgwTableFrames.length) {
+        imgwTableHourIndex = Math.max(0, imgwTableFrames.length - 1);
+    }
+    bindImgwTableNav($root);
+    bindImgwSharedSearch($root);
+    bindImgwSharedFilters($root);
+    startImgwTableGrid($root);
+    syncImgwTableHourUi();
+}
+
+function startImgwTableGrid($root) {
+    destroyImgwTableInstances();
     var filename = 'imgw-warunki-' + new Date().toISOString().slice(0, 10);
+    var title = function () {
+        return 'Warunki atmosferyczne o godzinie ' + ($root.attr('data-hour') || '');
+    };
     var exportOpts = {
         columns: ':visible',
         modifier: { search: 'applied', order: 'applied', page: 'all' },
@@ -74,11 +97,25 @@ function initImgwDataTable() {
     if (!imgwDtTables.length) {
         return;
     }
-
-    bindImgwSharedSearch($root);
-    bindImgwSharedFilters($root);
     bindImgwSharedOrder();
     bindImgwSharedExport($root, title, filename, exportOpts);
+}
+
+function applyImgwTableFilters($root) {
+    var search = $root.find('#imgw-dt-search').val() || '';
+    imgwDtTables.forEach(function (api) {
+        api.search(search);
+    });
+    $root.find('.imgw-dt-shared-filters .imgw-dt-colfilter').each(function () {
+        var col = parseInt(this.getAttribute('data-col'), 10);
+        var value = this.value;
+        imgwDtTables.forEach(function (api) {
+            api.column(col).search(value);
+        });
+    });
+    imgwDtTables.forEach(function (api) {
+        api.draw();
+    });
 }
 
 function bindImgwSharedSearch($root) {

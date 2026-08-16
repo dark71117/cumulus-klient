@@ -200,7 +200,7 @@ class KlientController extends Controller
 
     private function imgwTableNewHtml(): string
     {
-        $data = app(ImgwService::class)->table();
+        $data = app(ImgwService::class)->table(true);
         if (isset($data['error'])) {
             return view('klient.partials.critical')->render();
         }

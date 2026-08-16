@@ -123,12 +123,12 @@ class ImgwMapTest extends TestCase
             'geo_lat' => 51.1,
             'geo_lon' => 17.0,
         ]);
-        $oldest = $max->copy()->subHours(23);
-        $this->assertCount(24, $frames);
+        $oldest = $max->copy()->subHours(11);
+        $this->assertCount(12, $frames);
         $this->assertSame($oldest->format('G').':00', $frames[0]['hour']);
         $this->assertSame($oldest->format('d.m.Y'), $frames[0]['date']);
-        $this->assertSame('15:00', $frames[23]['hour']);
-        $this->assertSame('15.08.2026', $frames[23]['date']);
+        $this->assertSame('15:00', $frames[11]['hour']);
+        $this->assertSame('15.08.2026', $frames[11]['date']);
 
         $long = ImgwMap::frames($rows, $rows, '2026-08-15 15:00:00', [
             'geo_lat' => 51.1,
@@ -140,8 +140,8 @@ class ImgwMapTest extends TestCase
 
     public function test_playback_limit_clamps_to_allowed_range(): void
     {
-        $this->assertSame(24, ImgwMap::playbackLimit([]));
-        $this->assertSame(24, ImgwMap::playbackLimit(['mapaOkresy' => 0]));
+        $this->assertSame(12, ImgwMap::playbackLimit([]));
+        $this->assertSame(12, ImgwMap::playbackLimit(['mapaOkresy' => 0]));
         $this->assertSame(12, ImgwMap::playbackLimit(['mapaOkresy' => 12]));
         $this->assertSame(48, ImgwMap::playbackLimit(['mapaOkresy' => 48]));
         $this->assertSame(12, ImgwMap::playbackLimit(['mapaOkresy' => 3]));

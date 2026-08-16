@@ -67,7 +67,7 @@ class Client extends Authenticatable
             return;
         }
         Schema::table('z_klienci', function (Blueprint $table) {
-            $table->unsignedTinyInteger('mapaOkresy')->default(24);
+            $table->unsignedTinyInteger('mapaOkresy')->default(12);
         });
         $ready = true;
     }

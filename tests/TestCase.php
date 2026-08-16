@@ -48,7 +48,7 @@ abstract class TestCase extends BaseTestCase
             $table->integer('wojDepesze')->default(0);
             $table->float('geo_lat')->nullable();
             $table->float('geo_lon')->nullable();
-            $table->unsignedTinyInteger('mapaOkresy')->default(24);
+            $table->unsignedTinyInteger('mapaOkresy')->default(12);
         });
         Schema::create('ip_klienci', function (Blueprint $table) {
             $table->increments('id');
@@ -87,11 +87,16 @@ abstract class TestCase extends BaseTestCase
             $table->unsignedInteger('idStacji')->nullable();
             $table->dateTime('termin')->nullable();
             $table->float('temp')->nullable();
+            $table->float('tempOdcz')->nullable();
             $table->string('zjawisko')->nullable();
             $table->string('zjawiskoTXT')->nullable();
+            $table->string('zjawiskoKolor')->nullable();
+            $table->string('zjawiskoPoprzednie')->nullable();
             $table->string('zachmurzenieTXT')->nullable();
             $table->integer('zachmurzenie')->nullable();
             $table->string('zjawiskoIkona')->nullable();
+            $table->string('widzialnosc')->nullable();
+            $table->string('wiatr')->nullable();
             $table->string('zrodlo')->nullable();
         });
         Schema::create('z_listastacji', function (Blueprint $table) {

@@ -78,10 +78,10 @@ $(document).ready(function () {
         $('#ipAdmin').addClass('is-active');
         loadIpAdmin(klientUrl('/ipadmin'));
     });
-    $('#content').on('change', '#imgw-map-limit', function () {
+    $('#content').on('change', '#imgw-map-limit, #imgw-table-limit', function () {
         var limit = parseInt(this.value, 10);
         $.post(klientUrl('/maplimit'), { limit: limit }, function () {
-            loadContent('imgwMapNewTab');
+            loadContent(menuPosition);
         });
     });
     $('#content').on('submit', '.ipadmin-pane form', function (e) {
@@ -177,7 +177,11 @@ function openTableOnStart() {
     if ($('.tabs_frame').hasClass('hidden')) {
         return;
     }
-    if (!$('#imgwTab').hasClass('hidden')) {
+    if (!$('#imgwTableNewTab').hasClass('hidden')) {
+        $('#imgwTableNewTab').trigger('click');
+    } else if (!$('#imgwMapNewTab').hasClass('hidden')) {
+        $('#imgwMapNewTab').trigger('click');
+    } else if (!$('#imgwTab').hasClass('hidden')) {
         $('#imgwTab').trigger('click');
     } else if (!$('#imgwMapTab').hasClass('hidden')) {
         $('#imgwMapTab').trigger('click');

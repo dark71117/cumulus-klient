@@ -4,14 +4,14 @@ namespace App\Services\Panel;
 
 use App\Support\CustomerContext;
 use App\Support\ImgwMap;
-use App\Support\ImgwText;
+use App\Support\ImgwTable;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class ImgwService
 {
-    public function table(): array
+    public function table(bool $withFrames = false): array
     {
         $raw = $this->tableDb();
         if (! is_array($raw) || isset($raw['error'])) {
@@ -27,7 +27,7 @@ class ImgwService
             ];
         }
 
-        $customer = CustomerContext::get();
+        $customer = CustomerContext::get() ?: [];
         $actual = ! empty($raw['actualDateTime']) ? Carbon::parse($raw['actualDateTime']) : null;
         $result = [
             'actualHour' => $raw['actualHour'],
@@ -36,32 +36,23 @@ class ImgwService
         ];
         $regionRow = '';
         foreach ($raw['rows'] as $row) {
-            $godzina = 0;
-            if ($actual && ! empty($row->termin)) {
-                $godzina = (int) floor(abs(
-                    $actual->getTimestamp() - Carbon::parse($row->termin)->getTimestamp()
-                ) / 3600);
-            }
-            $item = [
-                'regionRow' => 0,
-                'region' => $row->region,
-                'imgwRow' => empty($row->zjawiskoKolor) ? 'imgwRow' : 'imgw'.$row->zjawiskoKolor,
-                'imgwCity' => empty($row->zjawiskoKolor) ? ' class="imgwCity"' : '',
-                'nazwaStacji' => $row->nazwaStacji,
-                'godzina' => $godzina,
-                'temp' => ($row->temp !== null && $row->temp != -99) ? number_format((float) $row->temp, 1, '.', '') : '-',
-                'tempOdcz' => ($row->tempOdcz !== null && $row->tempOdcz != -99) ? number_format((float) $row->tempOdcz, 1, '.', '-') : '',
-                'zachmurzenieTXT' => ImgwText::decode($row->zachmurzenieTXT),
-                'zjawiskoTXT' => ImgwText::markup($row->zjawiskoTXT),
-                'zjawiskoPoprzednie' => ImgwText::decode($row->zjawiskoPoprzednie),
-                'widzialnosc' => $row->widzialnosc != -99 ? ImgwText::decode($row->widzialnosc) : '-',
-                'wiatr' => ImgwText::decode($row->wiatr),
-            ];
+            $item = ImgwTable::item($row, $actual);
             if ($regionRow != $row->region && (int) ($customer['wojDepesze'] ?? 0) === 1) {
                 $item['regionRow'] = 1;
                 $regionRow = $row->region;
             }
             $result['rows'][] = $item;
+        }
+        if ($withFrames) {
+            try {
+                $meta = $this->tableFrameMeta($raw, $customer);
+                if (isset($meta['frames'][$meta['current'] ?? -1])) {
+                    $meta['frames'][$meta['current']]['rows'] = $result['rows'];
+                }
+                $result = array_merge($result, $meta);
+            } catch (Throwable $e) {
+                report($e);
+            }
         }
 
         return $result;
@@ -223,7 +214,7 @@ class ImgwService
                 ->select([
                     'ls.nazwaStacji', 'ls.region', 'd.temp', 'd.tempOdcz', 'd.zachmurzenieTXT',
                     'd.zjawiskoTXT', 'd.widzialnosc', 'd.wiatr', 'd.zjawiskoKolor', 'd.zjawisko',
-                    'd.zjawiskoPoprzednie', 'd.termin',
+                    'd.zjawiskoPoprzednie', 'd.termin', 'd.idStacji',
                 ])
                 ->get();
         } catch (Throwable $e) {
@@ -233,6 +224,71 @@ class ImgwService
         }
 
         return $result;
+    }
+
+    private function tableFrameMeta(array $raw, array $customer): array
+    {
+        $empty = ['frames' => [], 'current' => 0, 'limit' => ImgwMap::PLAYBACK_DEFAULT, 'actualDate' => ''];
+        $maxTermin = (string) ($raw['actualDateTime'] ?? '');
+        if ($maxTermin === '') {
+            return $empty;
+        }
+        $limit = ImgwMap::playbackLimit($customer);
+        $history = $this->tableHistoryRows($maxTermin, $limit);
+        $frames = ImgwTable::frames($raw['rows'], $history, $maxTermin, $limit);
+        $current = max(0, count($frames) - 1);
+        $frame = $frames[$current] ?? [];
+
+        return [
+            'frames' => $frames,
+            'current' => $current,
+            'limit' => $limit,
+            'actualDate' => $frame['date'] ?? Carbon::parse($maxTermin)->format('d.m.Y'),
+        ];
+    }
+
+    private function tableHistoryRows(?string $until = null, int $limit = ImgwMap::PLAYBACK_DEFAULT)
+    {
+        try {
+            $since = $this->mapHistorySince('z_depesze_archiwum as d', true, $until, $limit);
+
+            return $this->tableRows($since, 'z_depesze_archiwum as d', true, $until);
+        } catch (Throwable $e) {
+            report($e);
+            $since = $this->mapHistorySince('z_depesze as d', false, $until, $limit);
+
+            return $this->tableRows($since, 'z_depesze as d', false, $until);
+        }
+    }
+
+    private function tableRows(?string $since = null, string $depesze = 'z_depesze as d', bool $skipInterp = false, ?string $until = null)
+    {
+        $customer = CustomerContext::get();
+        $query = DB::table('z_uprawnieniadepesze as ud')
+            ->join($depesze, 'ud.idStacji', '=', 'd.idStacji')
+            ->join('z_listastacji as ls', 'd.idstacji', '=', 'ls.idStacji')
+            ->where('ud.aktywna', 1)
+            ->where('ud.idKlienta', $customer['id'])
+            ->where('ls.aktywna', 1)
+            ->orderBy('ud.lp')
+            ->select([
+                'ls.nazwaStacji', 'ls.region', 'd.temp', 'd.tempOdcz', 'd.zachmurzenieTXT',
+                'd.zjawiskoTXT', 'd.widzialnosc', 'd.wiatr', 'd.zjawiskoKolor', 'd.zjawisko',
+                'd.zjawiskoPoprzednie', 'd.termin', 'd.idStacji',
+            ]);
+        if ($since) {
+            $query->where('d.termin', '>=', $since);
+        }
+        if ($until) {
+            $query->where('d.termin', '<=', $until);
+        }
+        if ($skipInterp) {
+            $query->where(function ($q) {
+                $q->whereNull('d.zrodlo')->orWhere('d.zrodlo', '!=', 'interp');
+            });
+        }
+
+        return $query->get();
     }
 
     private function mapDb(): array

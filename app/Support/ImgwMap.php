@@ -6,7 +6,7 @@ use Carbon\Carbon;
 
 class ImgwMap
 {
-    public const PLAYBACK_DEFAULT = 24;
+    public const PLAYBACK_DEFAULT = 12;
     public const PLAYBACK_MIN = 12;
     public const PLAYBACK_MAX = 48;
     public const PLAYBACK_CHOICES = [12, 24, 36, 48];

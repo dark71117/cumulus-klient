@@ -46,6 +46,7 @@ class ImgwContentTest extends TestCase
             ->assertSee('Wrocław')
             ->assertSee('actualTable')
             ->assertDontSee('imgw-datatable')
+            ->assertDontSee('imgw-table-jump')
             ->assertDontSee('Błąd 404');
     }
 
@@ -324,14 +325,14 @@ class ImgwContentTest extends TestCase
         preg_match('/id="imgw-map-frames">([^<]*)<\/script>/', $html, $match);
         $frames = json_decode($match[1] ?? '', true);
         $this->assertIsArray($frames);
-        $this->assertCount(24, $frames);
-        $this->assertSame('19:00', $frames[23]['hour']);
-        $this->assertSame('15.08.2026', $frames[23]['date']);
-        $oldest = $max->copy()->subHours(23);
+        $this->assertCount(12, $frames);
+        $this->assertSame('19:00', $frames[11]['hour']);
+        $this->assertSame('15.08.2026', $frames[11]['date']);
+        $oldest = $max->copy()->subHours(11);
         $this->assertSame($oldest->format('G').':00', $frames[0]['hour']);
         $this->assertSame($oldest->format('d.m.Y'), $frames[0]['date']);
         $this->assertStringContainsString('id="imgw-map-limit"', $html);
-        $this->assertMatchesRegularExpression('/<option value="24"[^>]*selected/', $html);
+        $this->assertMatchesRegularExpression('/<option value="12"[^>]*selected/', $html);
     }
 
     public function test_map_limit_saves_to_company_profile(): void
@@ -417,6 +418,9 @@ class ImgwContentTest extends TestCase
         $clientJs = file_get_contents(public_path('js/client.js'));
         $this->assertIsString($clientJs);
         $this->assertStringContainsString("klientUrl('/maplimit')", $clientJs);
+        $this->assertStringContainsString('#imgw-table-limit', $clientJs);
+        $this->assertStringContainsString('loadContent(menuPosition)', $clientJs);
+        $this->assertStringContainsString("$('#imgwTableNewTab').trigger('click')", $clientJs);
     }
 
     public function test_table_new_tab_renders_datatable(): void
@@ -458,6 +462,15 @@ class ImgwContentTest extends TestCase
             ->assertSee('Dolnośląskie')
             ->assertSee('Województwo')
             ->assertSee('≥ 10')
+            ->assertSee('id="imgw-table-jump"', false)
+            ->assertSee('id="imgw-table-limit"', false)
+            ->assertSee('id="imgw-table-play"', false)
+            ->assertSee('id="imgw-table-frames"', false)
+            ->assertSee('Skok do godziny')
+            ->assertSee('Automatyczne przewijanie')
+            ->assertSee('imgw-table-step')
+            ->assertSee('imgw-dt-legend')
+            ->assertSee('imgw-dt-toolbar')
             ->assertDontSee('&ge;')
             ->assertDontSee('imgw-datatable-eu')
             ->assertDontSee('actualTable')
@@ -630,6 +643,17 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString('imgw-datatable-eu', $js);
         $this->assertStringContainsString('pageLength: 100', $js);
         $this->assertStringContainsString("[10, 25, 50, 100, -1], [10, 25, 50, 100, 'max']", $js);
+
+        $hourJs = file_get_contents(public_path('js/imgw-table-hour.js'));
+        $this->assertIsString($hourJs);
+        $this->assertStringContainsString('function bindImgwTableNav', $hourJs);
+        $this->assertStringContainsString('function renderImgwTableHour', $hourJs);
+        $this->assertStringContainsString('function queueImgwTablePlay', $hourJs);
+        $this->assertStringContainsString('function updateImgwTableRows', $hourJs);
+        $this->assertStringContainsString('setTimeout', $hourJs);
+        $this->assertStringNotContainsString('setInterval', $hourJs);
+        $this->assertStringContainsString('imgw-table-jump', $hourJs);
+        $this->assertStringContainsString('imgw-delay-1', $hourJs);
     }
 
     public function test_table_new_renders_phenomenon_html_instead_of_escaped_tags(): void
@@ -664,5 +688,108 @@ class ImgwContentTest extends TestCase
             ->assertSee('<span class="pogrubione">deszcz</span>', false)
             ->assertSee('data-export="słaby deszcz (ciągły)"', false)
             ->assertDontSee('&lt;span', false);
+    }
+
+    public function test_table_new_builds_hour_frames_for_playback(): void
+    {
+        $client = $this->makeClient(['IMGW' => 1, 'mapaOkresy' => 24]);
+        DB::table('z_listastacji')->insert([
+            ['idStacji' => 1, 'nazwaStacji' => 'Wrocław', 'region' => 'Dolnośląskie', 'aktywna' => 1],
+            ['idStacji' => 2, 'nazwaStacji' => 'Kraków', 'region' => 'Małopolskie', 'aktywna' => 1],
+        ]);
+        DB::table('z_depesze')->insert([
+            [
+                'idStacji' => 1,
+                'termin' => '2026-08-15 19:00:00',
+                'temp' => 20,
+                'tempOdcz' => 19,
+                'widzialnosc' => '50',
+                'wiatr' => 'pn / 4',
+            ],
+            [
+                'idStacji' => 2,
+                'termin' => '2026-08-15 19:00:00',
+                'temp' => 8,
+                'tempOdcz' => 7,
+                'widzialnosc' => '10',
+                'wiatr' => 'zach / 11',
+            ],
+        ]);
+        DB::table('z_depesze_archiwum')->insert([
+            [
+                'idStacji' => 1,
+                'termin' => '2026-08-15 18:00:00',
+                'temp' => 10,
+                'tempOdcz' => 9,
+                'widzialnosc' => '40',
+                'wiatr' => 'pn / 3',
+                'zrodlo' => 'local',
+            ],
+            [
+                'idStacji' => 1,
+                'termin' => '2026-08-15 19:00:00',
+                'temp' => 20,
+                'tempOdcz' => 19,
+                'widzialnosc' => '50',
+                'wiatr' => 'pn / 4',
+                'zrodlo' => 'local',
+            ],
+            [
+                'idStacji' => 2,
+                'termin' => '2026-08-15 19:00:00',
+                'temp' => 8,
+                'tempOdcz' => 7,
+                'widzialnosc' => '10',
+                'wiatr' => 'zach / 11',
+                'zrodlo' => 'local',
+            ],
+            [
+                'idStacji' => 1,
+                'termin' => '2026-08-15 17:00:00',
+                'temp' => 99,
+                'tempOdcz' => 99,
+                'widzialnosc' => '1',
+                'wiatr' => 'pn / 1',
+                'zrodlo' => 'interp',
+            ],
+        ]);
+        DB::table('z_uprawnieniadepesze')->insert([
+            ['idKlienta' => $client->id, 'idStacji' => 1, 'aktywna' => 1, 'lp' => 1],
+            ['idKlienta' => $client->id, 'idStacji' => 2, 'aktywna' => 1, 'lp' => 2],
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $html = $this->post('/klient/content', ['tab' => 'imgwTableNewTab'])
+            ->assertOk()
+            ->assertSee('id="imgw-table-hour"', false)
+            ->assertSee('19:00')
+            ->assertSee('15.08.2026')
+            ->getContent();
+
+        preg_match('/id="imgw-table-frames">([^<]*)<\/script>/', $html, $match);
+        $frames = json_decode($match[1] ?? '', true);
+        $this->assertIsArray($frames);
+        $this->assertCount(2, $frames);
+        $byHour = [];
+        foreach ($frames as $frame) {
+            $byHour[$frame['hour']] = $frame;
+        }
+        $this->assertSame('18:00', $byHour['18:00']['hour']);
+        $this->assertSame('19:00', $byHour['19:00']['hour']);
+        $this->assertArrayNotHasKey('17:00', $byHour);
+        $names18 = array_column($byHour['18:00']['rows'], 'nazwaStacji');
+        $names19 = array_column($byHour['19:00']['rows'], 'nazwaStacji');
+        $this->assertSame(['Wrocław'], $names18);
+        $this->assertContains('Wrocław', $names19);
+        $this->assertContains('Kraków', $names19);
+        $temps18 = array_column($byHour['18:00']['rows'], 'temp', 'nazwaStacji');
+        $this->assertSame('10.0', $temps18['Wrocław']);
+        $this->assertStringContainsString('id="imgw-table-jump"', $html);
+        $opt19 = strpos($html, '15.08.2026, 19:00');
+        $opt18 = strpos($html, '15.08.2026, 18:00');
+        $this->assertNotFalse($opt19);
+        $this->assertNotFalse($opt18);
+        $this->assertLessThan($opt18, $opt19);
     }
 }

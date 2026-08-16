@@ -107,6 +107,7 @@ class PanelContentTest extends TestCase
         $this->assertStringContainsString('id="imgwTableNewTab"', $html);
         $this->assertStringContainsString('>Tabela NEW</div>', $html);
         $this->assertStringContainsString('imgw-table.js', $html);
+        $this->assertStringContainsString('imgw-table-hour.js', $html);
         $this->assertStringContainsString('>Mapa</div>', $html);
         $this->assertStringContainsString('>Mapa NEW</div>', $html);
         $this->assertStringContainsString('id="imgwMapNewTab"', $html);
@@ -122,20 +123,20 @@ class PanelContentTest extends TestCase
         $this->assertStringNotContainsString('Atlas chmur', $html);
         $this->assertStringNotContainsString('Teoria meteorologii', $html);
         $this->assertLessThan(
-            strpos($html, 'id="imgwTableNewTab"'),
-            strpos($html, 'id="imgwTab"')
-        );
-        $this->assertLessThan(
-            strpos($html, 'id="imgwMapTab"'),
+            strpos($html, 'id="imgwMapNewTab"'),
             strpos($html, 'id="imgwTableNewTab"')
         );
         $this->assertLessThan(
-            strpos($html, 'id="imgwMapNewTab"'),
-            strpos($html, 'id="imgwMapTab"')
+            strpos($html, 'id="imgwTab"'),
+            strpos($html, 'id="imgwMapNewTab"')
+        );
+        $this->assertLessThan(
+            strpos($html, 'id="imgwMapTab"'),
+            strpos($html, 'id="imgwTab"')
         );
         $this->assertLessThan(
             strpos($html, 'id="addonsTab"'),
-            strpos($html, 'id="imgwMapNewTab"')
+            strpos($html, 'id="imgwMapTab"')
         );
     }
 
