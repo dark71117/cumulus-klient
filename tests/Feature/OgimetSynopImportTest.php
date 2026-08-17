@@ -80,4 +80,27 @@ TXT, 200),
             ->assertSee('umiarkowane');
         $this->post('/klient/content', ['tab' => 'imgwMapNew2Tab'])->assertOk();
     }
+
+    public function test_store_does_not_replace_current_row_with_older_hour(): void
+    {
+        DB::table('z_depesze_new')->insert([
+            'idStacji' => 12205,
+            'termin' => '2026-08-17 22:00:00',
+            'temp' => 17.1,
+            'zrodlo' => 'ogimet',
+        ]);
+        $store = app(\App\Services\Synop\SynopStore::class);
+        $store->save([
+            'idStacji' => 12205,
+            'termin' => '2026-08-17 21:00:00',
+            'temp' => 16.0,
+            'zrodlo' => 'ogimet',
+            'synop' => '12205 04/// /2402 10203 40112',
+        ]);
+
+        $row = DB::table('z_depesze_new')->where('idStacji', 12205)->first();
+        $this->assertSame('2026-08-17 22:00:00', $row->termin);
+        $this->assertEquals(17.1, $row->temp);
+        $this->assertSame(1, DB::table('z_depesze_archiwum_new')->where('termin', '2026-08-17 21:00:00')->count());
+    }
 }

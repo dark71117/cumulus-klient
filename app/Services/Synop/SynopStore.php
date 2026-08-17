@@ -46,7 +46,9 @@ class SynopStore
         $current = $this->payload($this->currentTable, $record);
         $existing = DB::table($this->currentTable)->where('idStacji', $record['idStacji'])->first();
         if ($existing) {
-            DB::table($this->currentTable)->where('id', $existing->id)->update($current);
+            if (empty($existing->termin) || $record['termin'] >= $existing->termin) {
+                DB::table($this->currentTable)->where('id', $existing->id)->update($current);
+            }
         } else {
             DB::table($this->currentTable)->insert($current);
         }

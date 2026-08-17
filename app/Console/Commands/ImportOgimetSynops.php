@@ -33,7 +33,10 @@ class ImportOgimetSynops extends Command
         }
 
         $this->info(sprintf(
-            'Ogimet: pobrano %d, zapisano %d, pominięto %d.',
+            'Ogimet [%s] %s lokalnie / %s UTC: pobrano %d, zapisano %d, pominięto %d.',
+            $stats['source'] ?? 'ogimet',
+            $stats['hourLocal'] ?? '-',
+            $stats['hourUtc'] ?? '-',
             $stats['fetched'],
             $stats['saved'],
             $stats['skipped']

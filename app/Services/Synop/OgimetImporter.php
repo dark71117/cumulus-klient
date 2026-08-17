@@ -15,9 +15,25 @@ class OgimetImporter
     /**
      * @return array{fetched: int, saved: int, skipped: int}
      */
+    /**
+     * @return array{fetched: int, saved: int, skipped: int, hourLocal: string, hourUtc: string, source: string}
+     */
     public function importLatest(): array
     {
-        return $this->persist($this->client->latestPoland());
+        $local = Carbon::now(config('app.timezone'))->startOfHour();
+        $utc = $local->copy()->timezone('UTC');
+        $items = $this->client->currentHourPoland($local);
+        $source = 'ogimet-hour';
+        if ($items === []) {
+            $items = $this->client->latestPoland();
+            $source = 'ogimet-latest';
+        }
+        $stats = $this->persist($items);
+        $stats['hourLocal'] = $local->format('Y-m-d H:i');
+        $stats['hourUtc'] = $utc->format('Y-m-d H:i');
+        $stats['source'] = $source;
+
+        return $stats;
     }
 
     /**
@@ -28,7 +44,12 @@ class OgimetImporter
         $to = Carbon::now('UTC')->startOfHour();
         $from = $to->copy()->subHours(max(1, $hours));
 
-        return $this->persist($this->client->rangePoland($from, $to));
+        $stats = $this->persist($this->client->rangePoland($from, $to));
+        $stats['hourLocal'] = $from->copy()->timezone(config('app.timezone'))->format('Y-m-d H:i');
+        $stats['hourUtc'] = $from->format('Y-m-d H:i');
+        $stats['source'] = 'ogimet-range';
+
+        return $stats;
     }
 
     /**

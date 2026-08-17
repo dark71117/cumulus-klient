@@ -20,6 +20,24 @@ class OgimetClient
     }
 
     /**
+     * Depesze z bieżącej godziny lokalnej (jak getSynops.pl), nie „ostatnie co Ogimet ma”.
+     *
+     * @return list<array{raw: string, stationId: int, observedAtUtc: Carbon, windUnit: int}>
+     */
+    public function currentHourPoland(?Carbon $localHour = null): array
+    {
+        $local = ($localHour ?? Carbon::now(config('app.timezone')))->startOfHour();
+        $fromUtc = $local->copy()->timezone('UTC');
+        $toUtc = $fromUtc->copy()->addHour();
+        $wanted = $fromUtc->format('Y-m-d H:00:00');
+
+        return array_values(array_filter(
+            $this->rangePoland($fromUtc, $toUtc),
+            fn (array $item) => $item['observedAtUtc']->copy()->startOfHour()->format('Y-m-d H:i:s') === $wanted
+        ));
+    }
+
+    /**
      * @return list<array{raw: string, stationId: int, observedAtUtc: Carbon, windUnit: int}>
      */
     public function rangePoland(Carbon $fromUtc, Carbon $toUtc): array
