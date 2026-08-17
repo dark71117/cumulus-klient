@@ -68,8 +68,10 @@ class MenuTabsService
         $types = [
             'imgwTab' => 'IMGW',
             'imgwTableNewTab' => 'IMGW',
+            'imgwTableNew2Tab' => 'IMGW',
             'imgwMapTab' => 'mapaWarunkow',
             'imgwMapNewTab' => 'mapaWarunkow',
+            'imgwMapNew2Tab' => 'mapaWarunkow',
             'gddkiaRegionTab' => 'GDDKIAwoj',
             'gddkiaRoadTab' => 'GDDKIAdrogi',
         ];

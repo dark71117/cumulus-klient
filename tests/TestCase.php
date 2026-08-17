@@ -65,40 +65,10 @@ abstract class TestCase extends BaseTestCase
             $table->dateTime('czas');
             $table->integer('licznik')->default(1);
         });
-        Schema::create('z_depesze', function (Blueprint $table) {
-            $table->increments('id');
-            $table->unsignedInteger('idStacji')->nullable();
-            $table->dateTime('termin')->nullable();
-            $table->float('temp')->nullable();
-            $table->float('tempOdcz')->nullable();
-            $table->string('zachmurzenieTXT')->nullable();
-            $table->string('zjawiskoTXT')->nullable();
-            $table->string('widzialnosc')->nullable();
-            $table->string('wiatr')->nullable();
-            $table->string('zjawiskoKolor')->nullable();
-            $table->string('zjawisko')->nullable();
-            $table->string('zjawiskoPoprzednie')->nullable();
-            $table->string('cisnienieTXT')->nullable();
-            $table->integer('zachmurzenie')->nullable();
-            $table->string('zjawiskoIkona')->nullable();
-        });
-        Schema::create('z_depesze_archiwum', function (Blueprint $table) {
-            $table->increments('id');
-            $table->unsignedInteger('idStacji')->nullable();
-            $table->dateTime('termin')->nullable();
-            $table->float('temp')->nullable();
-            $table->float('tempOdcz')->nullable();
-            $table->string('zjawisko')->nullable();
-            $table->string('zjawiskoTXT')->nullable();
-            $table->string('zjawiskoKolor')->nullable();
-            $table->string('zjawiskoPoprzednie')->nullable();
-            $table->string('zachmurzenieTXT')->nullable();
-            $table->integer('zachmurzenie')->nullable();
-            $table->string('zjawiskoIkona')->nullable();
-            $table->string('widzialnosc')->nullable();
-            $table->string('wiatr')->nullable();
-            $table->string('zrodlo')->nullable();
-        });
+        $this->createDepeszeTable('z_depesze');
+        $this->createDepeszeTable('z_depesze_archiwum');
+        $this->createDepeszeTable('z_depesze_new');
+        $this->createDepeszeTable('z_depesze_archiwum_new');
         Schema::create('z_listastacji', function (Blueprint $table) {
             $table->unsignedInteger('idStacji')->primary();
             $table->string('nazwaStacji')->nullable();
@@ -163,5 +133,28 @@ abstract class TestCase extends BaseTestCase
             'geo_lat' => 51.1,
             'geo_lon' => 17.0,
         ], $overrides));
+    }
+
+    private function createDepeszeTable(string $name): void
+    {
+        Schema::create($name, function (Blueprint $table) {
+            $table->increments('id');
+            $table->unsignedInteger('idStacji')->nullable();
+            $table->dateTime('termin')->nullable();
+            $table->float('temp')->nullable();
+            $table->float('tempOdcz')->nullable();
+            $table->string('zachmurzenieTXT')->nullable();
+            $table->string('zjawiskoTXT')->nullable();
+            $table->string('widzialnosc')->nullable();
+            $table->string('wiatr')->nullable();
+            $table->string('zjawiskoKolor')->nullable();
+            $table->string('zjawisko')->nullable();
+            $table->string('zjawiskoPoprzednie')->nullable();
+            $table->string('cisnienieTXT')->nullable();
+            $table->integer('zachmurzenie')->nullable();
+            $table->string('zjawiskoIkona')->nullable();
+            $table->string('zrodlo')->nullable();
+            $table->text('synop')->nullable();
+        });
     }
 }

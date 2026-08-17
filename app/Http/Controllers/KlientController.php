@@ -145,8 +145,10 @@ class KlientController extends Controller
             $tab === 'sunTab' => view('klient.partials.calendar', app(CalendarService::class)->data())->render(),
             $tab === 'imgwTab' => $this->imgwHtml(),
             $tab === 'imgwTableNewTab' => $this->imgwTableNewHtml(),
+            $tab === 'imgwTableNew2Tab' => $this->imgwTableNewHtml(true),
             $tab === 'imgwMapTab' => $this->imgwMapHtml(),
             $tab === 'imgwMapNewTab' => $this->imgwMapNewHtml(),
+            $tab === 'imgwMapNew2Tab' => $this->imgwMapNewHtml(true),
             $tab === 'gddkiaRegionTab' => $this->gddkiaCountiesHtml(),
             $tab === 'gddkiaRoadTab' => $this->gddkiaRoadsHtml(),
             $tab === 'forecast5Tab' => $this->meteomaxHtml(),
@@ -198,9 +200,10 @@ class KlientController extends Controller
         return view('klient.partials.imgw', ['data' => $data])->render();
     }
 
-    private function imgwTableNewHtml(): string
+    private function imgwTableNewHtml(bool $ogimet = false): string
     {
-        $data = app(ImgwService::class)->table(true);
+        $service = $ogimet ? ImgwService::fromOgimet() : app(ImgwService::class);
+        $data = $service->table(true);
         if (isset($data['error'])) {
             return view('klient.partials.critical')->render();
         }
@@ -218,9 +221,10 @@ class KlientController extends Controller
         return view('klient.partials.imgw-map', ['data' => $data])->render();
     }
 
-    private function imgwMapNewHtml(): string
+    private function imgwMapNewHtml(bool $ogimet = false): string
     {
-        $data = app(ImgwService::class)->mapLeaflet();
+        $service = $ogimet ? ImgwService::fromOgimet() : app(ImgwService::class);
+        $data = $service->mapLeaflet();
         if (isset($data['error'])) {
             return view('klient.partials.critical')->render();
         }

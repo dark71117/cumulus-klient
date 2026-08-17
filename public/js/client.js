@@ -18,7 +18,7 @@ $(document).ready(function () {
         var m = new Date().getMinutes();
         if ([3, 13, 23, 33, 43, 53].indexOf(m) !== -1) {
             autoLoading = 1;
-            if (['imgwTab', 'imgwTableNewTab', 'imgwMapTab', 'imgwMapNewTab', 'gddkiaRegionTab', 'gddkiaRoadTab', 'warningTab'].indexOf(menuPosition) !== -1) {
+            if (['imgwTab', 'imgwTableNewTab', 'imgwTableNew2Tab', 'imgwMapTab', 'imgwMapNewTab', 'imgwMapNew2Tab', 'gddkiaRegionTab', 'gddkiaRoadTab', 'warningTab'].indexOf(menuPosition) !== -1) {
                 loadContent(menuPosition);
             }
         }
@@ -161,7 +161,7 @@ function clearNavActive() {
 function setActualTabs() {
     $.ajax({ cache: false, type: 'POST', url: klientUrl('/actualtabs'), dataType: 'json',
         success: function (tabs) {
-            ['imgwTab', 'imgwTableNewTab', 'imgwMapTab', 'imgwMapNewTab', 'gddkiaRegionTab', 'gddkiaRoadTab'].forEach(function (key) {
+            ['imgwTab', 'imgwTableNewTab', 'imgwTableNew2Tab', 'imgwMapTab', 'imgwMapNewTab', 'imgwMapNew2Tab', 'gddkiaRegionTab', 'gddkiaRoadTab'].forEach(function (key) {
                 if (!tabs[key]) return;
                 if (tabs[key].active === 1) {
                     $('#' + key).removeClass('hidden');

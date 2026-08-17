@@ -11,6 +11,16 @@ use Throwable;
 
 class ImgwService
 {
+    public function __construct(
+        private string $depeszeTable = 'z_depesze',
+        private string $archiveTable = 'z_depesze_archiwum',
+    ) {}
+
+    public static function fromOgimet(): self
+    {
+        return new self('z_depesze_new', 'z_depesze_archiwum_new');
+    }
+
     public function table(bool $withFrames = false): array
     {
         $raw = $this->tableDb();
@@ -166,7 +176,7 @@ class ImgwService
             return $empty;
         }
         try {
-            $maxTermin = DB::table('z_depesze')->max('termin');
+            $maxTermin = DB::table($this->depeszeTable)->max('termin');
         } catch (Throwable $e) {
             report($e);
 
@@ -185,7 +195,7 @@ class ImgwService
         try {
             $pressure = DB::table('z_uprawnieniadepesze as ud')
                 ->join('z_listastacji as ls', 'ud.idStacji', '=', 'ls.idStacji')
-                ->join('z_depesze as d', 'ls.idStacji', '=', 'd.idStacji')
+                ->join($this->depeszeTable.' as d', 'ls.idStacji', '=', 'd.idStacji')
                 ->where('ud.cisnienie', 1)
                 ->where('d.cisnienieTXT', '!=', '')
                 ->where('ud.idKlienta', $customer['id'])
@@ -205,7 +215,7 @@ class ImgwService
             $since = $actual->copy()->subHours(2)->format('Y-m-d H:i:s');
             $result['rows'] = DB::table('z_uprawnieniadepesze as ud')
                 ->join('z_listastacji as ls', 'ud.idStacji', '=', 'ls.idStacji')
-                ->join('z_depesze as d', 'ls.idStacji', '=', 'd.idStacji')
+                ->join($this->depeszeTable.' as d', 'ls.idStacji', '=', 'd.idStacji')
                 ->where('ud.idKlienta', $customer['id'])
                 ->where('ud.aktywna', 1)
                 ->where('ls.aktywna', 1)
@@ -250,19 +260,20 @@ class ImgwService
     private function tableHistoryRows(?string $until = null, int $limit = ImgwMap::PLAYBACK_DEFAULT)
     {
         try {
-            $since = $this->mapHistorySince('z_depesze_archiwum as d', true, $until, $limit);
+            $since = $this->mapHistorySince($this->archiveTable.' as d', true, $until, $limit);
 
-            return $this->tableRows($since, 'z_depesze_archiwum as d', true, $until);
+            return $this->tableRows($since, $this->archiveTable.' as d', true, $until);
         } catch (Throwable $e) {
             report($e);
-            $since = $this->mapHistorySince('z_depesze as d', false, $until, $limit);
+            $since = $this->mapHistorySince($this->depeszeTable.' as d', false, $until, $limit);
 
-            return $this->tableRows($since, 'z_depesze as d', false, $until);
+            return $this->tableRows($since, $this->depeszeTable.' as d', false, $until);
         }
     }
 
-    private function tableRows(?string $since = null, string $depesze = 'z_depesze as d', bool $skipInterp = false, ?string $until = null)
+    private function tableRows(?string $since = null, ?string $depesze = null, bool $skipInterp = false, ?string $until = null)
     {
+        $depesze ??= $this->depeszeTable.' as d';
         $customer = CustomerContext::get();
         $query = DB::table('z_uprawnieniadepesze as ud')
             ->join($depesze, 'ud.idStacji', '=', 'd.idStacji')
@@ -298,7 +309,7 @@ class ImgwService
             return [];
         }
         try {
-            $maxTermin = DB::table('z_depesze')->max('termin');
+            $maxTermin = DB::table($this->depeszeTable)->max('termin');
             $counts = DB::table('z_uprawnieniadepesze as ud')
                 ->join('z_listastacji as ls', 'ud.idstacji', '=', 'ls.idStacji')
                 ->where('ud.aktywna', 1)
@@ -332,14 +343,14 @@ class ImgwService
     private function mapHistoryRows(?string $until = null, int $limit = ImgwMap::PLAYBACK_DEFAULT)
     {
         try {
-            $since = $this->mapHistorySince('z_depesze_archiwum as d', true, $until, $limit);
+            $since = $this->mapHistorySince($this->archiveTable.' as d', true, $until, $limit);
 
-            return $this->mapRows($since, 'z_depesze_archiwum as d', true, $until);
+            return $this->mapRows($since, $this->archiveTable.' as d', true, $until);
         } catch (Throwable $e) {
             report($e);
-            $since = $this->mapHistorySince('z_depesze as d', false, $until, $limit);
+            $since = $this->mapHistorySince($this->depeszeTable.' as d', false, $until, $limit);
 
-            return $this->mapRows($since, 'z_depesze as d', false, $until);
+            return $this->mapRows($since, $this->depeszeTable.' as d', false, $until);
         }
     }
 
@@ -369,8 +380,9 @@ class ImgwService
         return $oldest ? (string) $oldest : $until;
     }
 
-    private function mapRows(?string $since = null, string $depesze = 'z_depesze as d', bool $skipInterp = false, ?string $until = null)
+    private function mapRows(?string $since = null, ?string $depesze = null, bool $skipInterp = false, ?string $until = null)
     {
+        $depesze ??= $this->depeszeTable.' as d';
         $customer = CustomerContext::get();
         $query = DB::table('z_uprawnieniadepesze as ud')
             ->join($depesze, 'ud.idStacji', '=', 'd.idStacji')
