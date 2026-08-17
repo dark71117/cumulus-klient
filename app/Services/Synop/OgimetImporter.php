@@ -13,9 +13,6 @@ class OgimetImporter
     ) {}
 
     /**
-     * @return array{fetched: int, saved: int, skipped: int}
-     */
-    /**
      * @return array{fetched: int, saved: int, skipped: int, hourLocal: string, hourUtc: string, source: string}
      */
     public function importLatest(): array

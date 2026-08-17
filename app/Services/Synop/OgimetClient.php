@@ -49,12 +49,44 @@ class OgimetClient
             $toUtc->format('YmdHi')
         );
         $body = $this->get($url);
+        $parsed = $this->parseGetsynopCsv($body);
+        if ($parsed !== []) {
+            return $parsed;
+        }
         $parsed = $this->parseUltimosTxt($body);
         if ($parsed !== []) {
             return $parsed;
         }
 
         return $this->parseGetsynop($body);
+    }
+
+    /**
+     * Format CGI: 12205,2026,08,17,21,00,AAXX 17211 12205 45784 ...=
+     *
+     * @return list<array{raw: string, stationId: int, observedAtUtc: Carbon, windUnit: int}>
+     */
+    public function parseGetsynopCsv(string $body): array
+    {
+        $out = [];
+        foreach (preg_split("/\r\n|\n|\r/", $body) as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+            if (! preg_match('/^(\d{5}),(\d{4}),(\d{2}),(\d{2}),(\d{2}),(\d{2}),\s*AAXX\s+(\d{5})\s+(.+)$/i', $line, $m)) {
+                continue;
+            }
+            $observed = Carbon::create((int) $m[2], (int) $m[3], (int) $m[4], (int) $m[5], (int) $m[6], 0, 'UTC');
+            $out[] = [
+                'raw' => rtrim($m[8], '= '),
+                'stationId' => (int) $m[1],
+                'observedAtUtc' => $observed,
+                'windUnit' => (int) substr($m[7], 4, 1),
+            ];
+        }
+
+        return $out;
     }
 
     /** @return list<array{raw: string, stationId: int, observedAtUtc: Carbon, windUnit: int}> */

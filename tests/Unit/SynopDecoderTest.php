@@ -39,6 +39,32 @@ class SynopDecoderTest extends TestCase
         $this->assertSame('', $record['zachmurzenieTXT']);
     }
 
+    public function test_getsynop_csv_parser_reads_current_hour(): void
+    {
+        $body = <<<TXT
+12205,2026,08,17,21,00,AAXX 17211 12205 45784 82502 10162 20127 30088 40097 51001 333 81/50 88/58 91203 91302=
+12100,2026,08,17,20,00,AAXX 17201 12100 11581 62101 10166 20137 30080 40087 57010=
+TXT;
+        $items = (new OgimetClient)->parseGetsynopCsv($body);
+        $this->assertCount(2, $items);
+        $this->assertSame(12205, $items[0]['stationId']);
+        $this->assertSame('2026-08-17 21:00:00', $items[0]['observedAtUtc']->format('Y-m-d H:i:s'));
+        $this->assertStringStartsWith('12205', $items[0]['raw']);
+
+        $hour = (new class($body) extends OgimetClient {
+            public function __construct(private string $fixture) {}
+
+            public function rangePoland(Carbon $fromUtc, Carbon $toUtc): array
+            {
+                return $this->parseGetsynopCsv($this->fixture);
+            }
+        })->currentHourPoland(Carbon::parse('2026-08-17 23:00:00', 'Europe/Warsaw'));
+
+        $this->assertCount(1, $hour);
+        $this->assertSame(12205, $hour[0]['stationId']);
+        $this->assertSame('2026-08-17 21:00:00', $hour[0]['observedAtUtc']->format('Y-m-d H:i:s'));
+    }
+
     public function test_ogimet_txt_parser_joins_wrapped_lines(): void
     {
         $body = <<<TXT
