@@ -76,4 +76,15 @@
             @include('klient.partials.analiza-hour', ['rows' => $data['rows'] ?? []])
         @endif
     </div>
+
+    <div class="analiza-modal" id="analiza-explain-modal" hidden>
+        <div class="analiza-modal-backdrop" data-analiza-close></div>
+        <div class="analiza-modal-panel" role="dialog" aria-modal="true" aria-labelledby="analiza-explain-title">
+            <div class="analiza-modal-head">
+                <h2 id="analiza-explain-title">Rozbiór depeszy SYNOP</h2>
+                <button type="button" class="analiza-modal-close" data-analiza-close aria-label="Zamknij">×</button>
+            </div>
+            <div class="analiza-modal-body" id="analiza-explain-body"></div>
+        </div>
+    </div>
 </div>

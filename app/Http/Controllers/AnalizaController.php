@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Panel\AnalysisService;
+use App\Support\Synop\SynopExplainer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -10,6 +11,9 @@ class AnalizaController extends Controller
 {
     public function query(Request $request): JsonResponse
     {
+        if ((string) $request->input('mode') === 'explain') {
+            return $this->explain($request);
+        }
         $service = AnalysisService::fromSource($this->source($request));
         if ((string) $request->input('mode') === 'stats') {
             $stats = $service->stats(
@@ -53,6 +57,26 @@ class AnalizaController extends Controller
             'source' => $source,
             'mode' => 'hour',
         ])->render();
+    }
+
+    private function explain(Request $request): JsonResponse
+    {
+        $synop = trim((string) $request->input('synop', ''));
+        if ($synop === '') {
+            return response()->json(['ok' => false], 422);
+        }
+        $explained = (new SynopExplainer)->explain($synop);
+
+        return response()->json([
+            'ok' => true,
+            'html' => view('klient.partials.analiza-explain', [
+                'raw' => $explained['raw'],
+                'groups' => $explained['groups'],
+                'station' => trim((string) $request->input('station', '')),
+                'stationId' => trim((string) $request->input('station_id', '')),
+                'termin' => trim((string) $request->input('termin', '')),
+            ])->render(),
+        ]);
     }
 
     private function source(Request $request): string

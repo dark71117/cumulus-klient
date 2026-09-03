@@ -5,6 +5,8 @@ function destroyAnaliza() {
         analizaRequest.abort();
         analizaRequest = null;
     }
+    closeAnalizaExplain();
+    $(document).off('keydown.analizaExplain');
     destroyAnalizaTables();
 }
 
@@ -76,6 +78,20 @@ function bindAnaliza($root) {
     });
     $root.find('#analiza-stats-run').off('click.analiza').on('click.analiza', function () {
         loadAnalizaStats($root);
+    });
+    $root.off('click.analizaExplain').on('click.analizaExplain', '.analiza-synop-open', function () {
+        openAnalizaExplain($(this));
+    });
+    $root.off('click.analizaModal').on('click.analizaModal', '[data-analiza-close]', function () {
+        closeAnalizaExplain();
+    });
+    $root.off('click.analizaChip').on('click.analizaChip', '.analiza-explain-chip', function () {
+        highlightAnalizaExplain($(this).attr('data-i'));
+    });
+    $(document).off('keydown.analizaExplain').on('keydown.analizaExplain', function (e) {
+        if (e.key === 'Escape') {
+            closeAnalizaExplain();
+        }
     });
 }
 
@@ -206,5 +222,56 @@ function startAnalizaTable($root) {
             ]
         });
         api.buttons().container().appendTo($root.find('.imgw-dt-export'));
+    }
+}
+
+function openAnalizaExplain($btn) {
+    var $modal = $('#analiza-explain-modal');
+    var synop = $btn.attr('data-synop') || '';
+    if (!$modal.length || synop === '') {
+        return;
+    }
+    $modal.find('#analiza-explain-body').html('<p class="analiza-empty">Rozbijam depeszę…</p>');
+    $modal.prop('hidden', false);
+    $.ajax({
+        cache: false,
+        type: 'POST',
+        url: klientUrl('/analiza'),
+        data: {
+            mode: 'explain',
+            synop: synop,
+            station: $btn.attr('data-station') || '',
+            station_id: $btn.attr('data-id') || '',
+            termin: $btn.attr('data-termin') || ''
+        },
+        dataType: 'json',
+        error: function () {
+            $modal.find('#analiza-explain-body').html('<p class="analiza-empty">Nie udało się rozbić depeszy.</p>');
+        },
+        success: function (res) {
+            if (!res || !res.ok) {
+                $modal.find('#analiza-explain-body').html('<p class="analiza-empty">Nie udało się rozbić depeszy.</p>');
+                return;
+            }
+            $modal.find('#analiza-explain-body').html(res.html);
+        }
+    });
+}
+
+function closeAnalizaExplain() {
+    var $modal = $('#analiza-explain-modal');
+    if ($modal.length) {
+        $modal.prop('hidden', true);
+        $modal.find('#analiza-explain-body').empty();
+    }
+}
+
+function highlightAnalizaExplain(i) {
+    var $modal = $('#analiza-explain-modal');
+    $modal.find('.analiza-explain-chip, .analiza-explain-item').removeClass('is-active');
+    $modal.find('.analiza-explain-chip[data-i="' + i + '"], .analiza-explain-item[data-i="' + i + '"]').addClass('is-active');
+    var el = $modal.find('.analiza-explain-item[data-i="' + i + '"]')[0];
+    if (el && el.scrollIntoView) {
+        el.scrollIntoView({ block: 'nearest' });
     }
 }

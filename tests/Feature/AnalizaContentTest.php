@@ -20,6 +20,8 @@ class AnalizaContentTest extends TestCase
             ->assertSee('Szczecin')
             ->assertSee('12205')
             ->assertSee('12205 11784 62601 10141=')
+            ->assertSee('analiza-synop-open')
+            ->assertSee('Rozbiór depeszy SYNOP')
             ->assertSee('chmury zanikają')
             ->assertSee('umiarkowane')
             ->assertSee('14.1')
@@ -83,6 +85,39 @@ class AnalizaContentTest extends TestCase
         $this->assertStringContainsString('14.1', $html);
         $this->assertStringContainsString('13.0', $html);
         $this->assertStringContainsString('3', $html);
+    }
+
+    public function test_analiza_explain_breaks_down_synop_groups(): void
+    {
+        $client = $this->seedAnalizaClient();
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $res = $this->post('/klient/analiza', [
+            'mode' => 'explain',
+            'synop' => '12205 11784 62601 10141=',
+            'station' => 'Szczecin',
+            'station_id' => '12205',
+            'termin' => '2026-09-02 06:00:00',
+        ])->assertOk()->assertJsonPath('ok', true);
+
+        $html = $res->json('html');
+        $this->assertStringContainsString('Szczecin (12205)', $html);
+        $this->assertStringContainsString('14.1 °C', $html);
+        $this->assertStringContainsString('IIiii', $html);
+        $this->assertStringContainsString('irixhVV', $html);
+        $this->assertStringContainsString('1sTTT', $html);
+    }
+
+    public function test_analiza_explain_rejects_empty_synop(): void
+    {
+        $client = $this->seedAnalizaClient();
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $this->post('/klient/analiza', ['mode' => 'explain', 'synop' => ' '])
+            ->assertStatus(422)
+            ->assertJsonPath('ok', false);
     }
 
     public function test_analiza_stats_rejects_inverted_range(): void
