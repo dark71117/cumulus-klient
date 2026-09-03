@@ -7,10 +7,12 @@ function destroyAnaliza() {
     }
     closeAnalizaExplain();
     $(document).off('keydown.analizaExplain');
+    $(window).off('resize.analiza');
     destroyAnalizaTables();
 }
 
 function destroyAnalizaTables() {
+    $(window).off('resize.analiza');
     ['analiza-datatable', 'analiza-stats-table'].forEach(function (id) {
         var $table = $('#' + id);
         if ($table.length && $.fn.dataTable && $.fn.dataTable.isDataTable($table)) {
@@ -74,6 +76,8 @@ function bindAnaliza($root) {
         var api = analizaTableApi();
         if (api) {
             api.columns('.analiza-desc').visible(this.checked);
+            fitAnalizaScroll($root);
+            api.columns.adjust();
         }
     });
     $root.find('#analiza-stats-run').off('click.analiza').on('click.analiza', function () {
@@ -188,6 +192,8 @@ function startAnalizaTable($root) {
     var api = $table.DataTable({
         autoWidth: false,
         scrollX: true,
+        scrollY: '200px',
+        scrollCollapse: false,
         pageLength: 100,
         lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'max']],
         order: [],
@@ -208,6 +214,7 @@ function startAnalizaTable($root) {
             paginate: { first: 'Pierwsza', last: 'Ostatnia', next: '›', previous: '‹' }
         }
     });
+    $(api.table().container()).addClass('analiza-dt');
     if ($table.attr('id') === 'analiza-datatable') {
         api.columns('.analiza-desc').visible(showDesc);
         $root.find('#analiza-search').on('keyup search', function () {
@@ -223,6 +230,42 @@ function startAnalizaTable($root) {
         });
         api.buttons().container().appendTo($root.find('.imgw-dt-export'));
     }
+    api.on('draw', function () {
+        fitAnalizaScroll($root);
+    });
+    var layoutScroll = function () {
+        fitAnalizaScroll($root);
+        api.columns.adjust();
+    };
+    layoutScroll();
+    requestAnimationFrame(layoutScroll);
+    $(window).on('resize.analiza', layoutScroll);
+}
+
+function fitAnalizaScroll($root) {
+    var $body = $root.find('.analiza-body');
+    var $scroll = $root.find('.dt-scroll-body');
+    if (!$body.length || !$scroll.length) {
+        return;
+    }
+    var used = 0;
+    $body.children().each(function () {
+        if (!$(this).hasClass('dt-container')) {
+            used += $(this).outerHeight(true) || 0;
+        }
+    });
+    $root.find('.analiza-dt').children().each(function () {
+        if (!$(this).find('.dt-scroll').length) {
+            used += $(this).outerHeight(true) || 0;
+        }
+    });
+    used += $root.find('.dt-scroll-head').outerHeight(true) || 0;
+    used += 2;
+    var height = Math.floor($body.height() - used);
+    if (height < 140) {
+        height = 140;
+    }
+    $scroll.css({ height: height + 'px', maxHeight: height + 'px' });
 }
 
 function openAnalizaExplain($btn) {

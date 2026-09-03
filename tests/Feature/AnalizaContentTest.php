@@ -17,6 +17,9 @@ class AnalizaContentTest extends TestCase
         $this->post('/klient/content', ['tab' => 'analizaTab'])
             ->assertOk()
             ->assertSee('Analiza depesz SYNOP')
+            ->assertSee('Województwo')
+            ->assertSee('Stacja')
+            ->assertSee('Depesza')
             ->assertSee('Szczecin')
             ->assertSee('12205')
             ->assertSee('12205 11784 62601 10141=')
@@ -164,6 +167,8 @@ class AnalizaContentTest extends TestCase
             'termin' => '2026-09-02 06:00:00',
         ])->assertOk()->json('html');
 
+        $this->assertStringContainsString('id="analiza-datatable"', $html);
+        $this->assertStringContainsString('<thead>', $html);
         $this->assertStringContainsString('Gdańsk', $html);
         $this->assertStringContainsString('EPGD 020400Z', $html);
         $this->assertStringContainsString('data-kind="metar"', $html);
@@ -194,6 +199,27 @@ class AnalizaContentTest extends TestCase
             'from' => '2026-09-02 06:00',
             'to' => '2026-09-01 06:00',
         ])->assertOk()->assertSee('Niepoprawny zakres dat.');
+    }
+
+    public function test_analiza_table_scrolls_inside_viewport_above_footer(): void
+    {
+        $js = file_get_contents(public_path('js/analiza.js'));
+        $this->assertIsString($js);
+        $this->assertStringContainsString("scrollX: true", $js);
+        $this->assertStringContainsString("scrollY:", $js);
+        $this->assertStringContainsString('function fitAnalizaScroll', $js);
+        $this->assertStringContainsString("addClass('analiza-dt')", $js);
+
+        $clientJs = file_get_contents(public_path('js/client.js'));
+        $this->assertIsString($clientJs);
+        $this->assertStringContainsString("toggleClass('has-analiza'", $clientJs);
+        $this->assertStringContainsString('has-map has-analiza', $clientJs);
+
+        $css = file_get_contents(public_path('css/layout.css'));
+        $this->assertIsString($css);
+        $this->assertStringContainsString('#content.has-analiza', $css);
+        $this->assertStringContainsString('.analiza-dt', $css);
+        $this->assertStringContainsString('.dt-scroll-body', $css);
     }
 
     private function seedAnalizaClient()
