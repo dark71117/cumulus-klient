@@ -28,10 +28,7 @@ class AnalysisTable
             'wilgotnosc' => 'Wilgotność uu [%]',
             'cisnienieMorze' => 'QNH [hPa]',
             'cisnienieStacja' => 'QFE [hPa]',
-            'cisnienie' => 'Ciśnienie [hPa]',
             'wysokoscOpadu' => 'Opad [mm]',
-            'okresOpadu' => 'Okres opadu [h]',
-            'zjawisko' => 'Kod zjawiska ww',
         ];
         foreach (array_keys($fields) as $column) {
             if (! Schema::hasColumn($table, $column)) {

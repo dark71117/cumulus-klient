@@ -88,6 +88,11 @@ class AnalizaContentTest extends TestCase
         $this->assertStringContainsString('14.1', $html);
         $this->assertStringContainsString('13.0', $html);
         $this->assertStringContainsString('3', $html);
+        $this->assertStringContainsString('QNH [hPa]', $html);
+        $this->assertStringContainsString('Opad [mm]', $html);
+        $this->assertStringNotContainsString('Ciśnienie [hPa]', $html);
+        $this->assertStringNotContainsString('Okres opadu [h]', $html);
+        $this->assertStringNotContainsString('Kod zjawiska ww', $html);
     }
 
     public function test_analiza_explain_breaks_down_synop_groups(): void

@@ -92,4 +92,18 @@ class AnalysisTableTest extends TestCase
         $this->assertSame(10.0, AnalysisTable::parseNumeric('&ge; 10'));
         $this->assertSame(14.1, AnalysisTable::parseNumeric('14.1'));
     }
+
+    public function test_numeric_fields_omit_generic_pressure_precip_period_and_weather_code(): void
+    {
+        $labels = AnalysisTable::numericFields('z_depesze_archiwum_new');
+
+        $this->assertArrayHasKey('cisnienieMorze', $labels);
+        $this->assertArrayHasKey('wysokoscOpadu', $labels);
+        $this->assertArrayNotHasKey('cisnienie', $labels);
+        $this->assertArrayNotHasKey('okresOpadu', $labels);
+        $this->assertArrayNotHasKey('zjawisko', $labels);
+        $this->assertNotContains('Ciśnienie [hPa]', $labels);
+        $this->assertNotContains('Okres opadu [h]', $labels);
+        $this->assertNotContains('Kod zjawiska ww', $labels);
+    }
 }

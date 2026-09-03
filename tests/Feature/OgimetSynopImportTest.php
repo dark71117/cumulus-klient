@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Support\CustomerContext;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -31,6 +32,41 @@ TXT, 200),
         $this->assertStringEndsWith('=', (string) $row->synop_raw);
         $this->assertStringContainsString('12205', (string) $row->synop_raw);
         $this->assertSame(1, DB::table('z_depesze_archiwum_new')->where('idStacji', 12205)->count());
+    }
+
+    public function test_import_saves_foreign_synop_from_display_synops2(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-03 11:15:00', 'Europe/Warsaw'));
+        DB::table('z_listastacji')->insert([
+            'idStacji' => 17130,
+            'nazwaStacji' => 'TR - Ankara',
+            'region' => 'Europa południowa',
+            'aktywna' => 1,
+        ]);
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, 'state=Pol') || str_contains($url, 'estado=Pola')) {
+                return Http::response("12205,2026,09,03,09,00, AAXX 03091 12205 32560 10150=\n", 200);
+            }
+            if (str_contains($url, 'display_synops2.php') && str_contains($url, '17130')) {
+                return Http::response("202609030900 LTAC 17130 AAXX 03091 17130 11470 82504 10280=\n", 200);
+            }
+
+            return Http::response('', 200);
+        });
+
+        try {
+            $this->artisan('synop:import-ogimet')
+                ->assertSuccessful()
+                ->expectsOutputToContain('zapisano');
+
+            $ankara = DB::table('z_depesze_new')->where('idStacji', 17130)->first();
+            $this->assertNotNull($ankara);
+            $this->assertEquals(28.0, $ankara->temp);
+            $this->assertSame('ogimet', $ankara->zrodlo);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_new2_tabs_read_ogimet_tables_not_live_ones(): void

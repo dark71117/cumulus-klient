@@ -38,6 +38,45 @@ class OgimetClient
     }
 
     /**
+     * SYNOP zagranicznych stacji (display_synops2, jak stary metaf.pl), nie state=Pol.
+     *
+     * @param  list<int>  $wmoIds
+     * @return list<array{raw: string, stationId: int, observedAtUtc: Carbon, windUnit: int}>
+     */
+    public function rangeStations(Carbon $fromUtc, Carbon $toUtc, array $wmoIds): array
+    {
+        $wmoIds = array_values(array_unique(array_map('intval', $wmoIds)));
+        if ($wmoIds === []) {
+            return [];
+        }
+        $out = [];
+        foreach (array_chunk($wmoIds, 20) as $chunk) {
+            $lugar = implode('+', array_map(static fn (int $id) => sprintf('%05d', $id), $chunk));
+            $url = sprintf(
+                'https://www.ogimet.com/display_synops2.php?lang=en&lugar=%s&tipo=ALL&ord=REV&nil=SI&fmt=txt&ano=%s&mes=%s&day=%s&hora=%s&min=%s&anof=%s&mesf=%s&dayf=%s&horaf=%s&minf=%s',
+                $lugar,
+                $fromUtc->format('Y'),
+                $fromUtc->format('m'),
+                $fromUtc->format('d'),
+                $fromUtc->format('H'),
+                $fromUtc->format('i'),
+                $toUtc->format('Y'),
+                $toUtc->format('m'),
+                $toUtc->format('d'),
+                $toUtc->format('H'),
+                $toUtc->format('i')
+            );
+            $out = array_merge($out, $this->parseAny($this->get($url)));
+        }
+        $want = array_fill_keys($wmoIds, true);
+
+        return array_values(array_filter(
+            $out,
+            fn (array $item) => isset($want[(int) $item['stationId']])
+        ));
+    }
+
+    /**
      * @return list<array{raw: string, stationId: int, observedAtUtc: Carbon, windUnit: int}>
      */
     public function rangePoland(Carbon $fromUtc, Carbon $toUtc): array
@@ -49,11 +88,7 @@ class OgimetClient
             $toUtc->format('YmdHi')
         );
         $body = $this->get($url);
-        $parsed = $this->parseGetsynopCsv($body);
-        if ($parsed !== []) {
-            return $parsed;
-        }
-        $parsed = $this->parseUltimosTxt($body);
+        $parsed = $this->parseAny($body);
         if ($parsed !== []) {
             return $parsed;
         }
@@ -156,6 +191,22 @@ class OgimetClient
         }
 
         return $out;
+    }
+
+    /**
+     * @return list<array{raw: string, stationId: int, observedAtUtc: Carbon, windUnit: int}>
+     */
+    private function parseAny(string $body): array
+    {
+        if (preg_match('/<pre[^>]*>(.*)<\/pre>/is', $body, $m)) {
+            $body = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+        }
+        $parsed = $this->parseGetsynopCsv($body);
+        if ($parsed !== []) {
+            return $parsed;
+        }
+
+        return $this->parseUltimosTxt($body);
     }
 
     private function joinWrappedLines(string $body): string

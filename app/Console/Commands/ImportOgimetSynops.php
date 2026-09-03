@@ -12,7 +12,7 @@ class ImportOgimetSynops extends Command
         {--hours=0 : Pobierz zakres z ostatnich N godzin zamiast samego latest}
         {--ensure-tables : Tylko utwórz tabele z_depesze_new / z_depesze_archiwum_new}';
 
-    protected $description = 'Pobiera pełne depesze SYNOP z Ogimet (Polska) do tabel *_new';
+    protected $description = 'Pobiera pełne depesze SYNOP z Ogimet (Polska i zagranica) do tabel *_new';
 
     public function handle(OgimetImporter $importer): int
     {
