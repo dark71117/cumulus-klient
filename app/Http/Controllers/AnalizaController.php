@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Panel\AnalysisService;
+use App\Support\AnalysisTable;
 use App\Support\Synop\SynopExplainer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -65,16 +66,24 @@ class AnalizaController extends Controller
         if ($synop === '') {
             return response()->json(['ok' => false], 422);
         }
+        $meta = [
+            'station' => trim((string) $request->input('station', '')),
+            'stationId' => trim((string) $request->input('station_id', '')),
+            'termin' => trim((string) $request->input('termin', '')),
+        ];
+        if ((string) $request->input('kind') === 'metar' || AnalysisTable::isMetar($synop)) {
+            return response()->json([
+                'ok' => true,
+                'html' => view('klient.partials.analiza-explain-metar', $meta + ['raw' => $synop])->render(),
+            ]);
+        }
         $explained = (new SynopExplainer)->explain($synop);
 
         return response()->json([
             'ok' => true,
-            'html' => view('klient.partials.analiza-explain', [
+            'html' => view('klient.partials.analiza-explain', $meta + [
                 'raw' => $explained['raw'],
                 'groups' => $explained['groups'],
-                'station' => trim((string) $request->input('station', '')),
-                'stationId' => trim((string) $request->input('station_id', '')),
-                'termin' => trim((string) $request->input('termin', '')),
             ])->render(),
         ]);
     }

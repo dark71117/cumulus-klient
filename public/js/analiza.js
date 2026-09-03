@@ -240,6 +240,7 @@ function openAnalizaExplain($btn) {
         data: {
             mode: 'explain',
             synop: synop,
+            kind: $btn.attr('data-kind') || '',
             station: $btn.attr('data-station') || '',
             station_id: $btn.attr('data-id') || '',
             termin: $btn.attr('data-termin') || ''

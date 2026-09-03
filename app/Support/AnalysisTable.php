@@ -47,6 +47,7 @@ class AnalysisTable
         $termin = ! empty($row->termin) ? Carbon::parse($row->termin) : null;
         $code = self::code($row->zjawisko ?? null);
         $desc = ImgwText::plain($row->zjawiskoTXT ?? '');
+        $source = self::sourceMessage($row);
 
         return [
             'region' => (string) ($row->region ?? ''),
@@ -66,7 +67,8 @@ class AnalysisTable
             'wiatrTXT' => ImgwText::decode($row->wiatr ?? ''),
             'czas' => $termin ? $termin->format('H:i') : '',
             'termin' => $termin ? $termin->format('Y-m-d H:i:s') : '',
-            'synopRaw' => self::rawMessage($row),
+            'synopRaw' => $source['text'],
+            'sourceKind' => $source['kind'],
             'imgwRow' => empty($row->zjawiskoKolor) ? 'imgwRow' : 'imgw'.$row->zjawiskoKolor,
         ];
     }
@@ -103,14 +105,30 @@ class AnalysisTable
         return number_format($value, $decimals, '.', '');
     }
 
-    private static function rawMessage(object $row): string
+    public static function isMetar(string $raw): bool
+    {
+        $raw = strtoupper(trim($raw));
+
+        return (bool) preg_match('/^(?:METAR|SPECI)\s+[A-Z]{4}\b/', $raw)
+            || (bool) preg_match('/^[A-Z]{4}\s+\d{6}Z\b/', $raw);
+    }
+
+    /**
+     * @return array{text: string, kind: string}
+     */
+    private static function sourceMessage(object $row): array
     {
         $raw = trim((string) ($row->synop_raw ?? ''));
         if ($raw !== '') {
-            return $raw;
+            return ['text' => $raw, 'kind' => 'synop'];
         }
+        $metar = trim((string) ($row->metar ?? ''));
+        if ($metar !== '') {
+            return ['text' => $metar, 'kind' => 'metar'];
+        }
+        $synop = trim((string) ($row->synop ?? ''));
 
-        return trim((string) ($row->synop ?? ''));
+        return ['text' => $synop, 'kind' => $synop === '' ? '' : 'synop'];
     }
 
     private static function windAaxx(object $row): string

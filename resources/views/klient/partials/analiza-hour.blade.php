@@ -44,14 +44,19 @@
                 <td class="analiza-desc">{{ $row['zachmurzenieTXT'] }}</td>
                 <td class="analiza-desc">{{ $row['wiatrTXT'] }}</td>
                 <td>{{ $row['czas'] }}</td>
-                <td class="analiza-synop" title="{{ $row['synopRaw'] }} — kliknij, aby rozbić człony">
-                    <button type="button"
-                            class="analiza-synop-open"
-                            data-synop="{{ $row['synopRaw'] }}"
-                            data-station="{{ $row['nazwaStacji'] }}"
-                            data-id="{{ $row['idStacji'] }}"
-                            data-termin="{{ $row['termin'] }}">{{ $row['synopRaw'] }}</button>
-                </td>
+                @if($row['synopRaw'] === '')
+                    <td class="analiza-synop">/</td>
+                @else
+                    <td class="analiza-synop" title="{{ $row['sourceKind'] === 'metar' ? 'Oryginał METAR — kliknij, aby zobaczyć' : $row['synopRaw'].' — kliknij, aby rozbić człony' }}">
+                        <button type="button"
+                                class="analiza-synop-open"
+                                data-synop="{{ $row['synopRaw'] }}"
+                                data-kind="{{ $row['sourceKind'] }}"
+                                data-station="{{ $row['nazwaStacji'] }}"
+                                data-id="{{ $row['idStacji'] }}"
+                                data-termin="{{ $row['termin'] }}">@if($row['sourceKind'] === 'metar')<span class="analiza-source-kind">METAR</span> @endif{{ $row['synopRaw'] }}</button>
+                    </td>
+                @endif
             </tr>
         @endforeach
         </tbody>

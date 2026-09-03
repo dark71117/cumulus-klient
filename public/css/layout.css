@@ -886,6 +886,17 @@ body.layout-app {
 .analiza-synop-open:focus {
     text-decoration: underline;
 }
+.analiza-source-kind {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 0 5px;
+    border-radius: 4px;
+    background: #1f5270;
+    color: #fff;
+    font: 700 10px Verdana, sans-serif;
+    letter-spacing: .03em;
+    vertical-align: 1px;
+}
 .analiza-modal {
     position: fixed;
     inset: 0;

@@ -178,6 +178,7 @@ abstract class TestCase extends BaseTestCase
             $table->string('zrodlo')->nullable();
             $table->text('synop')->nullable();
             $table->text('synop_raw')->nullable();
+            $table->text('metar')->nullable();
             $table->float('wilgotnosc')->nullable();
             $table->float('cisnienie')->nullable();
             $table->float('cisnienieStacja')->nullable();

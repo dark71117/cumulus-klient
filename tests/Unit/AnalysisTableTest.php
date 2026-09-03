@@ -47,6 +47,7 @@ class AnalysisTableTest extends TestCase
         $this->assertSame('1 chmury zanikają', $item['zjawiskoTXT']);
         $this->assertSame('06:00', $item['czas']);
         $this->assertSame('12205 11784 62601 10141=', $item['synopRaw']);
+        $this->assertSame('synop', $item['sourceKind']);
     }
 
     public function test_missing_values_are_slash_and_legacy_synop_is_fallback(): void
@@ -64,6 +65,24 @@ class AnalysisTableTest extends TestCase
         $this->assertSame('/', $item['temp']);
         $this->assertSame('/', $item['windAaxx']);
         $this->assertSame('12100 04/// /0000=', $item['synopRaw']);
+        $this->assertSame('synop', $item['sourceKind']);
+    }
+
+    public function test_metar_is_shown_when_synop_raw_is_missing(): void
+    {
+        $item = AnalysisTable::item((object) [
+            'nazwaStacji' => 'Gdańsk',
+            'idStacji' => 12140,
+            'temp' => 16.0,
+            'termin' => '2026-09-03 09:00:00',
+            'synop' => '12140 04/60 72807 10160=',
+            'metar' => 'EPGD 030700Z 27011KT 9999 FEW030 16/12 Q1015=',
+        ]);
+
+        $this->assertSame('EPGD 030700Z 27011KT 9999 FEW030 16/12 Q1015=', $item['synopRaw']);
+        $this->assertSame('metar', $item['sourceKind']);
+        $this->assertTrue(AnalysisTable::isMetar($item['synopRaw']));
+        $this->assertFalse(AnalysisTable::isMetar('12205 11784 62601 10141='));
     }
 
     public function test_parse_numeric_skips_missing_and_reads_visibility_text(): void

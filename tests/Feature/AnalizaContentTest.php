@@ -109,6 +109,67 @@ class AnalizaContentTest extends TestCase
         $this->assertStringContainsString('1sTTT', $html);
     }
 
+    public function test_analiza_explain_shows_metar_instead_of_fake_synop_groups(): void
+    {
+        $client = $this->seedAnalizaClient();
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $html = $this->post('/klient/analiza', [
+            'mode' => 'explain',
+            'kind' => 'metar',
+            'synop' => 'EPGD 030700Z 27011KT 9999 FEW030 16/12 Q1015=',
+            'station' => 'Gdańsk',
+            'station_id' => '12140',
+            'termin' => '2026-09-03 09:00:00',
+        ])->assertOk()->assertJsonPath('ok', true)->json('html');
+
+        $this->assertStringContainsString('EPGD 030700Z', $html);
+        $this->assertStringContainsString('METAR', $html);
+        $this->assertStringContainsString('To nie jest depesza SYNOP', $html);
+        $this->assertStringNotContainsString('irixhVV', $html);
+    }
+
+    public function test_analiza_hour_shows_metar_when_synop_raw_is_empty(): void
+    {
+        $client = $this->seedAnalizaClient();
+        DB::table('z_listastacji')->insert([
+            'idStacji' => 12140,
+            'nazwaStacji' => 'Gdańsk',
+            'region' => 'Pomorskie',
+            'aktywna' => 1,
+        ]);
+        DB::table('z_uprawnieniadepesze')->insert([
+            'idKlienta' => $client->id,
+            'idStacji' => 12140,
+            'aktywna' => 1,
+            'lp' => 2,
+        ]);
+        DB::table('z_depesze_archiwum_new')->insert([
+            'idStacji' => 12140,
+            'termin' => '2026-09-02 06:00:00',
+            'temp' => 16.0,
+            'wilgotnosc' => 77,
+            'cisnienieMorze' => 1015.0,
+            'zrodlo' => 'ogimet',
+            'synop' => '12140 04/60 72807 10160=',
+            'metar' => 'EPGD 020400Z 27011KT 9999 FEW030 16/12 Q1015=',
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $html = $this->post('/klient/analiza', [
+            'mode' => 'hour',
+            'source' => 'ogimet',
+            'termin' => '2026-09-02 06:00:00',
+        ])->assertOk()->json('html');
+
+        $this->assertStringContainsString('Gdańsk', $html);
+        $this->assertStringContainsString('EPGD 020400Z', $html);
+        $this->assertStringContainsString('data-kind="metar"', $html);
+        $this->assertStringContainsString('analiza-source-kind', $html);
+    }
+
     public function test_analiza_explain_rejects_empty_synop(): void
     {
         $client = $this->seedAnalizaClient();
