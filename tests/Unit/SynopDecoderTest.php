@@ -24,6 +24,7 @@ class SynopDecoderTest extends TestCase
         $this->assertNotSame('', $record['zjawiskoIkona']);
         $this->assertSame('ogimet', $record['zrodlo']);
         $this->assertSame('zach', explode(' / ', $record['wiatr'])[0]);
+        $this->assertSame('12205 11784 62601 10171 20140 30087 40096 57005 69932 70182 86500 333 10211 20171=', $record['synop_raw']);
     }
 
     public function test_short_backup_synop_has_temperature_but_no_weather(): void

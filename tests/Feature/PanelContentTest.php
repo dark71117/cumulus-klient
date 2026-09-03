@@ -115,6 +115,9 @@ class PanelContentTest extends TestCase
         $this->assertStringContainsString('id="imgwMapNewTab"', $html);
         $this->assertStringContainsString('id="imgwMapNew2Tab"', $html);
         $this->assertStringContainsString('>Mapa NEW2</div>', $html);
+        $this->assertStringContainsString('id="analizaTab"', $html);
+        $this->assertStringContainsString('>Analiza</div>', $html);
+        $this->assertStringContainsString('analiza.js', $html);
         $this->assertStringContainsString('>Dodatki</div>', $html);
         $this->assertStringContainsString('https://meteomax.pl', $html);
         $this->assertStringContainsString('https://meteomax.eu', $html);
@@ -139,8 +142,12 @@ class PanelContentTest extends TestCase
             strpos($html, 'id="imgwTableNew2Tab"')
         );
         $this->assertLessThan(
-            strpos($html, 'id="imgwTab"'),
+            strpos($html, 'id="analizaTab"'),
             strpos($html, 'id="imgwMapNew2Tab"')
+        );
+        $this->assertLessThan(
+            strpos($html, 'id="imgwTab"'),
+            strpos($html, 'id="analizaTab"')
         );
         $this->assertLessThan(
             strpos($html, 'id="imgwMapTab"'),
@@ -164,6 +171,8 @@ class PanelContentTest extends TestCase
         $this->assertArrayHasKey('imgwMapTab', $tabs);
         $this->assertArrayHasKey('imgwTableNew2Tab', $tabs);
         $this->assertArrayHasKey('imgwMapNew2Tab', $tabs);
+        $this->assertArrayHasKey('analizaTab', $tabs);
+        $this->assertSame(1, $tabs['analizaTab']['active']);
         $this->assertArrayNotHasKey('satPhotoTab', $tabs);
         $this->assertSame(1, $tabs['imgwTab']['active']);
         $this->assertSame(1, $tabs['imgwTableNewTab']['active']);

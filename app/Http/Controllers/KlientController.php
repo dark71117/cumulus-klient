@@ -146,6 +146,7 @@ class KlientController extends Controller
             $tab === 'imgwTab' => $this->imgwHtml(),
             $tab === 'imgwTableNewTab' => $this->imgwTableNewHtml(),
             $tab === 'imgwTableNew2Tab' => $this->imgwTableNewHtml(true),
+            $tab === 'analizaTab' => app(AnalizaController::class)->page(),
             $tab === 'imgwMapTab' => $this->imgwMapHtml(),
             $tab === 'imgwMapNewTab' => $this->imgwMapNewHtml(),
             $tab === 'imgwMapNew2Tab' => $this->imgwMapNewHtml(true),

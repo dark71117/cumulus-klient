@@ -98,9 +98,17 @@ class SynopDecoder
             'cisnienieStacja' => $pStation,
             'cisnienieMorze' => $pSea,
             'synop' => rtrim(preg_replace('/\s+/', ' ', $raw) ?? $raw, "=\n "),
+            'synop_raw' => self::rawMessage($raw),
             'metar' => '',
             'zrodlo' => 'ogimet',
         ];
+    }
+
+    public static function rawMessage(string $raw): string
+    {
+        $stripped = rtrim(preg_replace('/\s+/', ' ', trim($raw)) ?? $raw, "=\n\r ");
+
+        return $stripped === '' ? '' : $stripped.'=';
     }
 
     /** @return list<string> */

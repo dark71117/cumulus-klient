@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cumulus - serwis pogodowy</title>
     <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=8">
-    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=19">
+    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=20">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.3/css/buttons.dataTables.min.css">
@@ -84,6 +84,7 @@
 <script src="{{ asset('js/imgw-map.js') }}?v=10"></script>
 <script src="{{ asset('js/imgw-table-hour.js') }}?v=2"></script>
 <script src="{{ asset('js/imgw-table.js') }}?v=6"></script>
-<script src="{{ asset('js/client.js') }}?v=15"></script>
+<script src="{{ asset('js/analiza.js') }}?v=1"></script>
+<script src="{{ asset('js/client.js') }}?v=16"></script>
 </body>
 </html>

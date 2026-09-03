@@ -22,14 +22,26 @@ class SynopStore
             if (Schema::hasTable('z_depesze_archiwum') && ! Schema::hasTable($this->archiveTable)) {
                 DB::statement('CREATE TABLE '.$this->archiveTable.' LIKE z_depesze_archiwum');
             }
-
-            return;
-        }
-        if (! Schema::hasTable($this->currentTable) && Schema::hasTable('z_depesze')) {
+        } elseif (! Schema::hasTable($this->currentTable) && Schema::hasTable('z_depesze')) {
             DB::statement('CREATE TABLE '.$this->currentTable.' AS SELECT * FROM z_depesze WHERE 0');
-        }
-        if (! Schema::hasTable($this->archiveTable) && Schema::hasTable('z_depesze_archiwum')) {
+            if (! Schema::hasTable($this->archiveTable) && Schema::hasTable('z_depesze_archiwum')) {
+                DB::statement('CREATE TABLE '.$this->archiveTable.' AS SELECT * FROM z_depesze_archiwum WHERE 0');
+            }
+        } elseif (! Schema::hasTable($this->archiveTable) && Schema::hasTable('z_depesze_archiwum')) {
             DB::statement('CREATE TABLE '.$this->archiveTable.' AS SELECT * FROM z_depesze_archiwum WHERE 0');
+        }
+        $this->ensureRawColumn();
+    }
+
+    public function ensureRawColumn(): void
+    {
+        foreach (['z_depesze', 'z_depesze_archiwum', $this->currentTable, $this->archiveTable] as $table) {
+            if (! Schema::hasTable($table) || Schema::hasColumn($table, 'synop_raw')) {
+                continue;
+            }
+            Schema::table($table, function ($blueprint) {
+                $blueprint->text('synop_raw')->nullable();
+            });
         }
     }
 

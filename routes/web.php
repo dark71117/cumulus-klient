@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalizaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\IpAdminController;
 use App\Http\Controllers\KlientController;
@@ -19,6 +20,7 @@ Route::prefix('klient')->group(function () {
         Route::post('/actualtabs', [KlientController::class, 'actualTabs'])->name('klient.actualtabs');
         Route::post('/tabstatus', [KlientController::class, 'tabStatus'])->name('klient.tabstatus');
         Route::post('/content', [KlientController::class, 'content'])->name('klient.content');
+        Route::post('/analiza', [AnalizaController::class, 'query'])->name('klient.analiza');
         Route::post('/maplimit', [KlientController::class, 'saveMapLimit'])->name('klient.maplimit');
         Route::get('/pobierz/tv/{filename}', [KlientController::class, 'downloadTv'])->name('klient.tvfile')->where('filename', '.*');
         Route::get('/kamery/{variant}/{number}/{region?}', [KlientController::class, 'cameras'])->name('klient.cameras');

@@ -69,6 +69,7 @@ class MenuTabsService
             'imgwTab' => 'IMGW',
             'imgwTableNewTab' => 'IMGW',
             'imgwTableNew2Tab' => 'IMGW',
+            'analizaTab' => 'IMGW',
             'imgwMapTab' => 'mapaWarunkow',
             'imgwMapNewTab' => 'mapaWarunkow',
             'imgwMapNew2Tab' => 'mapaWarunkow',

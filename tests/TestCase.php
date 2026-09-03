@@ -14,6 +14,28 @@ abstract class TestCase extends BaseTestCase
 {
     use RefreshDatabase;
 
+    public function createApplication()
+    {
+        $app = parent::createApplication();
+        $app['config']->set('app.env', 'testing');
+        $app['config']->set('app.url', 'http://localhost');
+        $app['config']->set('database.default', 'sqlite');
+        $app['config']->set('database.connections.sqlite.database', ':memory:');
+        $app['config']->set('database.connections.sqlite.url', null);
+        $cumulus = $app['config']->get('cumulus', []);
+        foreach (require $app->configPath('cumulus.php') as $key => $value) {
+            if (! array_key_exists($key, $cumulus)) {
+                $cumulus[$key] = $value;
+            }
+        }
+        $app['config']->set('cumulus', $cumulus);
+        $app['config']->set('cumulus.meteomax_active', false);
+        $app['url']->forceRootUrl('http://localhost');
+        $app['db']->purge();
+
+        return $app;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -155,6 +177,18 @@ abstract class TestCase extends BaseTestCase
             $table->string('zjawiskoIkona')->nullable();
             $table->string('zrodlo')->nullable();
             $table->text('synop')->nullable();
+            $table->text('synop_raw')->nullable();
+            $table->float('wilgotnosc')->nullable();
+            $table->float('cisnienie')->nullable();
+            $table->float('cisnienieStacja')->nullable();
+            $table->float('cisnienieMorze')->nullable();
+            $table->integer('wiatrP')->nullable();
+            $table->integer('wiatrK')->nullable();
+            $table->float('wiatrMS')->nullable();
+            $table->integer('porywy')->nullable();
+            $table->string('zachmurzeniePodstawa')->nullable();
+            $table->float('wysokoscOpadu')->nullable();
+            $table->integer('okresOpadu')->nullable();
         });
     }
 }

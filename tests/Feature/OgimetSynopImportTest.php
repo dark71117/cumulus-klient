@@ -28,6 +28,8 @@ TXT, 200),
         $this->assertSame('umiarkowane', $row->zachmurzenieTXT);
         $this->assertStringContainsString('chmury zanikają', (string) $row->zjawiskoTXT);
         $this->assertSame('ogimet', $row->zrodlo);
+        $this->assertStringEndsWith('=', (string) $row->synop_raw);
+        $this->assertStringContainsString('12205', (string) $row->synop_raw);
         $this->assertSame(1, DB::table('z_depesze_archiwum_new')->where('idStacji', 12205)->count());
     }
 

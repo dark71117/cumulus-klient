@@ -794,6 +794,90 @@ body.layout-app {
 .imgw-map-step-next {
     right: 12px;
 }
+.analiza-app {
+    padding: 14px 16px 22px;
+}
+.analiza-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+.analiza-toolbar,
+.analiza-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+    color: #163a52;
+    font-size: 13px;
+}
+.analiza-head .analiza-toolbar {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #fff;
+}
+.analiza-toolbar label,
+.analiza-controls label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.analiza-toolbar select,
+.analiza-controls select,
+.analiza-controls input[type="datetime-local"] {
+    height: 28px;
+    border: 1px solid #2d8ec5;
+    border-radius: 6px;
+    padding: 0 6px;
+    background: #fff;
+    color: #163a52;
+    font: 12px Verdana, sans-serif;
+}
+.analiza-nav,
+.analiza-now {
+    height: 28px;
+    min-width: 32px;
+    border: 1px solid #2d8ec5;
+    border-radius: 6px;
+    background: #fff;
+    color: #1f4e79;
+    font: 700 13px Verdana, sans-serif;
+    cursor: pointer;
+}
+.analiza-nav:disabled,
+.analiza-now:disabled {
+    opacity: .45;
+    cursor: default;
+}
+.analiza-synop {
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11px;
+}
+.analiza-hide-desc .analiza-desc {
+    display: none;
+}
+.analiza-empty,
+.analiza-stats-meta {
+    margin: 12px 4px;
+    color: #1f4e79;
+}
+.analiza-app.is-loading .analiza-body {
+    opacity: .55;
+}
 .imgw-table-stage {
     position: relative;
     padding: 0 56px;
