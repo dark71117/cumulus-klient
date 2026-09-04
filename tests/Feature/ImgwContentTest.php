@@ -470,6 +470,9 @@ class ImgwContentTest extends TestCase
             ->assertSee('Automatyczne przewijanie')
             ->assertSee('imgw-table-step')
             ->assertSee('imgw-dt-legend')
+            ->assertSee('dane sprzed godziny')
+            ->assertSee('dane sprzed dwóch godzin')
+            ->assertDontSee('nazwa miasta')
             ->assertSee('imgw-dt-toolbar')
             ->assertDontSee('&ge;')
             ->assertDontSee('imgw-datatable-eu')
@@ -560,7 +563,7 @@ class ImgwContentTest extends TestCase
         $this->assertGreaterThan($eu, $bruksela);
     }
 
-    public function test_table_new_marks_delayed_city_cell_not_whole_row(): void
+    public function test_table_new_marks_delayed_rows_with_legend_swatch(): void
     {
         $client = $this->makeClient(['IMGW' => 1]);
         $actual = now()->startOfHour();
@@ -612,16 +615,20 @@ class ImgwContentTest extends TestCase
             ->assertSee('imgwdeszcz')
             ->getContent();
 
-        $this->assertMatchesRegularExpression(
-            '/<td[^>]*class="[^"]*imgw-delay-1[^"]*"[^>]*>\s*Amsterdam/u',
+        $this->assertDoesNotMatchRegularExpression(
+            '/<td[^>]*class="[^"]*imgw-delay-[12][^"]*"/u',
             $html
         );
         $this->assertMatchesRegularExpression(
-            '/<td[^>]*class="[^"]*imgw-delay-2[^"]*"[^>]*>\s*Kopenhaga/u',
+            '/<span[^>]*class="[^"]*imgw-dt-swatch imgw-delay-1[^"]*"[^>]*><\/span>\s*EUROPA ZACHODNIA[\s\S]*?Amsterdam/u',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '/<span[^>]*class="[^"]*imgw-dt-swatch imgw-delay-2[^"]*"[^>]*><\/span>\s*EUROPA PÓŁNOCNA[\s\S]*?Kopenhaga/u',
             $html
         );
         $this->assertDoesNotMatchRegularExpression(
-            '/<td[^>]*class="[^"]*imgw-delay-[12][^"]*"[^>]*>\s*Wrocław/u',
+            '/<span[^>]*class="[^"]*imgw-dt-swatch imgw-delay-[12][^"]*"[^>]*><\/span>\s*Dolnośląskie/u',
             $html
         );
         $this->assertMatchesRegularExpression(
@@ -653,7 +660,9 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString('setTimeout', $hourJs);
         $this->assertStringNotContainsString('setInterval', $hourJs);
         $this->assertStringContainsString('imgw-table-jump', $hourJs);
-        $this->assertStringContainsString('imgw-delay-1', $hourJs);
+        $this->assertStringContainsString('function imgwDelaySwatch', $hourJs);
+        $this->assertStringContainsString('imgw-dt-swatch imgw-delay-1', $hourJs);
+        $this->assertStringContainsString('imgw-delay-none', $hourJs);
     }
 
     public function test_table_new_renders_phenomenon_html_instead_of_escaped_tags(): void

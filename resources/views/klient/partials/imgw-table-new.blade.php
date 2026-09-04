@@ -18,8 +18,8 @@
         <div class="imgw-dt-toolbar">
             <div class="imgw-dt-export"></div>
             <div class="imgw-dt-legend">
-                <span><span class="imgw-dt-swatch imgw-delay-1"></span> nazwa miasta — dane sprzed godziny</span>
-                <span><span class="imgw-dt-swatch imgw-delay-2"></span> nazwa miasta — dane sprzed dwóch godzin</span>
+                <span><span class="imgw-dt-swatch imgw-delay-1"></span> dane sprzed godziny</span>
+                <span><span class="imgw-dt-swatch imgw-delay-2"></span> dane sprzed dwóch godzin</span>
             </div>
             <label class="imgw-dt-search-label">Szukaj:
                 <input type="search" id="imgw-dt-search" placeholder="Miejscowość, zjawisko…">

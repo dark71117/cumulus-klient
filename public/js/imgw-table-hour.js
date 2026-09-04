@@ -78,27 +78,26 @@ function fillImgwTableBodies(rows) {
     }
 }
 
+function imgwDelaySwatch(delayHours) {
+    if (delayHours === 1) {
+        return '<span class="imgw-dt-swatch imgw-delay-1" title="Dane sprzed godziny"></span>';
+    }
+    if (delayHours === 2) {
+        return '<span class="imgw-dt-swatch imgw-delay-2" title="Dane sprzed dwóch godzin"></span>';
+    }
+    return '<span class="imgw-dt-swatch imgw-delay-none" aria-hidden="true"></span>';
+}
+
 function imgwTableRowHtml(row) {
     var delayHours = parseInt(row.godzina, 10) || 0;
     var delay = delayHours === 1 ? ' (1 h)' : (delayHours === 2 ? ' (2 h)' : '');
-    var cityClass = [];
-    if (row.imgwCity && delayHours === 0) {
-        cityClass.push('imgwCity');
-    }
-    if (delayHours === 1) {
-        cityClass.push('imgw-delay-1');
-    }
-    if (delayHours === 2) {
-        cityClass.push('imgw-delay-2');
-    }
-    var title = delayHours === 1 ? ' title="Dane sprzed godziny"' : (delayHours === 2 ? ' title="Dane sprzed dwóch godzin"' : '');
-    var cityAttr = cityClass.length ? ' class="' + cityClass.join(' ') + '"' : '';
+    var cityClass = (row.imgwCity && delayHours === 0) ? ' class="imgwCity"' : '';
     var temp = row.temp == null ? '-' : String(row.temp);
     var tempOdcz = row.tempOdcz == null ? '' : String(row.tempOdcz);
     var zjawisko = row.zjawiskoTXT || '';
     return '<tr class="' + imgwEsc(row.imgwRow || 'imgwRow') + '">' +
-        '<td>' + imgwEsc(row.region) + '</td>' +
-        '<td' + cityAttr + ' data-export="' + imgwEsc(String(row.nazwaStacji || '') + delay) + '"' + title + '>' + imgwEsc(row.nazwaStacji) + '</td>' +
+        '<td data-export="' + imgwEsc(row.region) + '">' + imgwDelaySwatch(delayHours) + ' ' + imgwEsc(row.region) + '</td>' +
+        '<td' + cityClass + ' data-export="' + imgwEsc(String(row.nazwaStacji || '') + delay) + '">' + imgwEsc(row.nazwaStacji) + '</td>' +
         '<td data-order="' + imgwEsc(temp === '-' ? '-999' : temp) + '">' + imgwEsc(temp) + '</td>' +
         '<td data-order="' + imgwEsc(tempOdcz === '' ? '-999' : tempOdcz) + '">' + imgwEsc(tempOdcz) + '</td>' +
         '<td>' + imgwEsc(row.zachmurzenieTXT) + '</td>' +

@@ -614,15 +614,11 @@ body.layout-app {
 .imgw-table-new table.dataTable tbody tr.imgwburza td {
     background: #ffc4b8;
 }
-.imgw-table-new table.dataTable tbody td.imgw-delay-1,
 .imgw-table-new .imgw-dt-swatch.imgw-delay-1 {
-    background: #ffde00 !important;
-    color: #111;
+    background: #ffde00;
 }
-.imgw-table-new table.dataTable tbody td.imgw-delay-2,
 .imgw-table-new .imgw-dt-swatch.imgw-delay-2 {
-    background: #e53935 !important;
-    color: #fff;
+    background: #e53935;
 }
 .imgw-dt-swatch {
     display: inline-block;
@@ -632,6 +628,10 @@ body.layout-app {
     border-radius: 3px;
     vertical-align: middle;
     border: 1px solid rgba(0, 0, 0, .25);
+}
+.imgw-table-new .imgw-dt-swatch.imgw-delay-none {
+    background: transparent;
+    border-color: transparent;
 }
 .layout-app #content.has-map .imgw-map-new {
     display: flex;
