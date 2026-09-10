@@ -18,7 +18,7 @@ function parseImgwTableFrames() {
 }
 
 function renderImgwTableHour(index) {
-    var $root = $('.imgw-table-new');
+    var $root = $('.imgw-table-new').not('.analiza-app');
     if (!$root.length || !imgwTableFrames[index]) {
         return;
     }
@@ -35,20 +35,23 @@ function renderImgwTableHour(index) {
     syncImgwTableHourUi();
 }
 
-function updateImgwTableRows(rows) {
+function imgwOrderedRows(rows) {
     var pl = [];
     var eu = [];
-    rows.forEach(function (row) {
+    (rows || []).forEach(function (row) {
         if (Number(row.europe) === 1) {
             eu.push(row);
         } else {
             pl.push(row);
         }
     });
+    return pl.concat(eu);
+}
+
+function updateImgwTableRows(rows) {
+    var ordered = imgwOrderedRows(rows);
     imgwDtTables.forEach(function (api) {
-        var id = api.table().node().id;
-        var subset = id === 'imgw-datatable-eu' ? eu : pl;
-        var nodes = subset.map(function (row) {
+        var nodes = ordered.map(function (row) {
             return $(imgwTableRowHtml(row)).get(0);
         }).filter(Boolean);
         api.clear();
@@ -59,22 +62,9 @@ function updateImgwTableRows(rows) {
 }
 
 function fillImgwTableBodies(rows) {
-    var pl = [];
-    var eu = [];
-    rows.forEach(function (row) {
-        if (Number(row.europe) === 1) {
-            eu.push(row);
-        } else {
-            pl.push(row);
-        }
-    });
-    var $pl = $('#imgw-datatable-pl tbody');
-    var $eu = $('#imgw-datatable-eu tbody');
-    if ($pl.length) {
-        $pl.html(pl.map(imgwTableRowHtml).join(''));
-    }
-    if ($eu.length) {
-        $eu.html(eu.map(imgwTableRowHtml).join(''));
+    var $body = $('#imgw-datatable tbody');
+    if ($body.length) {
+        $body.html(imgwOrderedRows(rows).map(imgwTableRowHtml).join(''));
     }
 }
 
@@ -95,7 +85,8 @@ function imgwTableRowHtml(row) {
     var temp = row.temp == null ? '-' : String(row.temp);
     var tempOdcz = row.tempOdcz == null ? '' : String(row.tempOdcz);
     var zjawisko = row.zjawiskoTXT || '';
-    return '<tr class="' + imgwEsc(row.imgwRow || 'imgwRow') + '">' +
+    var europe = Number(row.europe) === 1 ? '1' : '0';
+    return '<tr class="' + imgwEsc(row.imgwRow || 'imgwRow') + '" data-europe="' + europe + '">' +
         '<td data-export="' + imgwEsc(row.region) + '">' + imgwDelaySwatch(delayHours) + ' ' + imgwEsc(row.region) + '</td>' +
         '<td' + cityClass + ' data-export="' + imgwEsc(String(row.nazwaStacji || '') + delay) + '">' + imgwEsc(row.nazwaStacji) + '</td>' +
         '<td data-order="' + imgwEsc(temp === '-' ? '-999' : temp) + '">' + imgwEsc(temp) + '</td>' +

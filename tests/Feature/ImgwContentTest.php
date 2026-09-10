@@ -456,8 +456,10 @@ class ImgwContentTest extends TestCase
 
         $this->post('/klient/content', ['tab' => 'imgwTableNewTab'])
             ->assertOk()
-            ->assertSee('imgw-datatable-pl')
+            ->assertSee('id="imgw-datatable"', false)
             ->assertSee('Polska')
+            ->assertSee('Europa')
+            ->assertSee('Wszystkie')
             ->assertSee('Wrocław')
             ->assertSee('Dolnośląskie')
             ->assertSee('Województwo')
@@ -470,11 +472,13 @@ class ImgwContentTest extends TestCase
             ->assertSee('Automatyczne przewijanie')
             ->assertSee('imgw-table-step')
             ->assertSee('imgw-dt-legend')
+            ->assertSee('imgw-dt-region')
             ->assertSee('dane sprzed godziny')
             ->assertSee('dane sprzed dwóch godzin')
             ->assertDontSee('nazwa miasta')
             ->assertSee('imgw-dt-toolbar')
             ->assertDontSee('&ge;')
+            ->assertDontSee('imgw-datatable-pl')
             ->assertDontSee('imgw-datatable-eu')
             ->assertDontSee('actualTable')
             ->assertDontSee('Błąd 404');
@@ -492,7 +496,7 @@ class ImgwContentTest extends TestCase
             ->assertDontSee('imgw-datatable');
     }
 
-    public function test_table_new_splits_poland_and_europe(): void
+    public function test_table_new_keeps_poland_and_europe_in_one_table(): void
     {
         $client = $this->makeClient(['IMGW' => 1, 'wojDepesze' => 1]);
         DB::table('z_listastacji')->insert([
@@ -544,23 +548,26 @@ class ImgwContentTest extends TestCase
 
         $html = $this->post('/klient/content', ['tab' => 'imgwTableNewTab'])
             ->assertOk()
-            ->assertSee('imgw-datatable-pl')
-            ->assertSee('imgw-datatable-eu')
+            ->assertSee('id="imgw-datatable"', false)
+            ->assertSee('imgw-dt-region')
+            ->assertSee('data-region="all"', false)
+            ->assertSee('data-region="pl"', false)
+            ->assertSee('data-region="eu"', false)
             ->assertSee('Polska')
             ->assertSee('Europa')
             ->assertSee('id="imgw-dt-search"', false)
+            ->assertDontSee('imgw-datatable-pl')
+            ->assertDontSee('imgw-datatable-eu')
             ->getContent();
 
-        $pl = strpos($html, 'id="imgw-datatable-pl"');
-        $eu = strpos($html, 'id="imgw-datatable-eu"');
+        $table = strpos($html, 'id="imgw-datatable"');
         $wroclaw = strpos($html, 'Wrocław');
         $bruksela = strpos($html, 'Bruksela');
-        $this->assertNotFalse($pl);
-        $this->assertNotFalse($eu);
-        $this->assertLessThan($eu, $pl);
-        $this->assertGreaterThan($pl, $wroclaw);
-        $this->assertLessThan($eu, $wroclaw);
-        $this->assertGreaterThan($eu, $bruksela);
+        $this->assertNotFalse($table);
+        $this->assertGreaterThan($table, $wroclaw);
+        $this->assertGreaterThan($wroclaw, $bruksela);
+        $this->assertMatchesRegularExpression('/<tr class="imgwRow" data-europe="0">[\s\S]*?Wrocław/u', $html);
+        $this->assertMatchesRegularExpression('/<tr class="imgwRow" data-europe="1">[\s\S]*?Bruksela/u', $html);
     }
 
     public function test_table_new_marks_delayed_rows_with_legend_swatch(): void
@@ -632,7 +639,7 @@ class ImgwContentTest extends TestCase
             $html
         );
         $this->assertMatchesRegularExpression(
-            '/<tr class="imgwdeszcz">[\s\S]*?Amsterdam[\s\S]*?<\/tr>/u',
+            '/<tr class="imgwdeszcz"[^>]*>[\s\S]*?Amsterdam[\s\S]*?<\/tr>/u',
             $html
         );
     }
@@ -645,11 +652,28 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString("page: 'all'", $js);
         $this->assertStringContainsString("extend: 'excelHtml5'", $js);
         $this->assertStringContainsString("extend: 'pdfHtml5'", $js);
-        $this->assertStringContainsString('imgwMergedExportData', $js);
-        $this->assertStringContainsString('imgw-datatable-pl', $js);
-        $this->assertStringContainsString('imgw-datatable-eu', $js);
-        $this->assertStringContainsString('pageLength: 100', $js);
-        $this->assertStringContainsString("[10, 25, 50, 100, -1], [10, 25, 50, 100, 'max']", $js);
+        $this->assertStringContainsString("scrollX: true", $js);
+        $this->assertStringContainsString("scrollY:", $js);
+        $this->assertStringContainsString('function fitImgwTableScroll', $js);
+        $this->assertStringContainsString('function bindImgwRegionSwitch', $js);
+        $this->assertStringContainsString('function imgwRegionSearch', $js);
+        $this->assertStringContainsString("addClass('imgw-dt')", $js);
+        $this->assertStringContainsString('#imgw-datatable', $js);
+        $this->assertStringNotContainsString('imgw-datatable-pl', $js);
+        $this->assertStringNotContainsString('imgw-datatable-eu', $js);
+        $this->assertStringNotContainsString('imgwMergedExportData', $js);
+        $this->assertStringContainsString('pageLength: -1', $js);
+
+        $clientJs = file_get_contents(public_path('js/client.js'));
+        $this->assertIsString($clientJs);
+        $this->assertStringContainsString("toggleClass('has-imgw-table'", $clientJs);
+        $this->assertStringContainsString('has-map has-analiza has-imgw-table', $clientJs);
+
+        $css = file_get_contents(public_path('css/layout.css'));
+        $this->assertIsString($css);
+        $this->assertStringContainsString('#content.has-imgw-table', $css);
+        $this->assertStringContainsString('.imgw-dt', $css);
+        $this->assertStringContainsString('.imgw-dt-region', $css);
 
         $hourJs = file_get_contents(public_path('js/imgw-table-hour.js'));
         $this->assertIsString($hourJs);
@@ -657,6 +681,8 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString('function renderImgwTableHour', $hourJs);
         $this->assertStringContainsString('function queueImgwTablePlay', $hourJs);
         $this->assertStringContainsString('function updateImgwTableRows', $hourJs);
+        $this->assertStringContainsString('function imgwOrderedRows', $hourJs);
+        $this->assertStringContainsString('data-europe', $hourJs);
         $this->assertStringContainsString('setTimeout', $hourJs);
         $this->assertStringNotContainsString('setInterval', $hourJs);
         $this->assertStringContainsString('imgw-table-jump', $hourJs);

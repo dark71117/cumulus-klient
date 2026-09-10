@@ -1,8 +1,9 @@
 @php
     $delayHours = (int) $row['godzina'];
     $delay = $delayHours === 1 ? ' (1 h)' : ($delayHours === 2 ? ' (2 h)' : '');
+    $europe = !empty($row['europe']) ? '1' : '0';
 @endphp
-<tr class="{{ $row['imgwRow'] }}">
+<tr class="{{ $row['imgwRow'] }}" data-europe="{{ $europe }}">
     <td data-export="{{ $row['region'] }}">
         @if($delayHours === 1)
             <span class="imgw-dt-swatch imgw-delay-1" title="Dane sprzed godziny"></span>

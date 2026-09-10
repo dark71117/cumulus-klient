@@ -496,12 +496,40 @@ body.layout-app {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
     gap: 16px;
     margin-bottom: 10px;
     padding: 10px 12px;
     border-radius: 12px;
     background: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+}
+.imgw-dt-region {
+    display: flex;
+    border: 1px solid #2d8ec5;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+.imgw-dt-region-btn {
+    height: 28px;
+    padding: 0 12px;
+    border: 0;
+    border-right: 1px solid #2d8ec5;
+    background: #fff;
+    color: #1f4e79;
+    font: 700 12px Verdana, sans-serif;
+    cursor: pointer;
+}
+.imgw-dt-region-btn:last-child {
+    border-right: 0;
+}
+.imgw-dt-region-btn:hover {
+    background: #e7f1f8;
+}
+.imgw-dt-region-btn.is-active {
+    background: #1f5270;
+    color: #fff;
 }
 .imgw-dt-search-label {
     display: flex;
@@ -524,13 +552,17 @@ body.layout-app {
     gap: 6px;
     margin-bottom: 14px;
 }
-.imgw-dt-section {
-    margin-bottom: 18px;
+.imgw-table-stage {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: 0 56px;
 }
-.imgw-dt-section-title {
-    margin: 0 0 8px;
-    font-size: 15px;
-    color: #1f5270;
+.imgw-table-stage-body {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
 }
 .imgw-table-new .dt-container {
     background: #fff;
@@ -1096,12 +1128,53 @@ body.layout-app {
     flex: 1;
     min-height: 0;
 }
-.layout-app #content.has-analiza .dt-scroll-body {
+.layout-app #content.has-analiza .dt-scroll-body,
+.layout-app #content.has-imgw-table .dt-scroll-body {
     overflow: auto !important;
 }
-.imgw-table-stage {
-    position: relative;
-    padding: 0 56px;
+.layout-app .main_frame #content.has-imgw-table {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.layout-app #content.has-imgw-table .imgw-table-new {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 14px 16px 8px;
+    box-sizing: border-box;
+}
+.layout-app #content.has-imgw-table .imgw-dt-head,
+.layout-app #content.has-imgw-table .imgw-dt-pressure,
+.layout-app #content.has-imgw-table .imgw-dt-toolbar,
+.layout-app #content.has-imgw-table .imgw-dt-shared-filters {
+    flex-shrink: 0;
+}
+.layout-app #content.has-imgw-table .imgw-table-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.layout-app #content.has-imgw-table .imgw-table-stage-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.layout-app #content.has-imgw-table .imgw-dt {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.layout-app #content.has-imgw-table .imgw-dt > .dt-layout-row:has(.dt-scroll) {
+    flex: 1;
+    min-height: 0;
 }
 .leaflet-tooltip.imgw-pin-tip {
     padding: 6px 9px;

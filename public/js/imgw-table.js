@@ -1,5 +1,4 @@
 var imgwDtTables = [];
-var imgwDtSyncingOrder = false;
 
 function destroyImgwDataTable() {
     stopImgwTablePlay();
@@ -9,6 +8,7 @@ function destroyImgwDataTable() {
 }
 
 function destroyImgwTableInstances() {
+    $(window).off('resize.imgwTable');
     imgwDtTables.forEach(function (api) {
         var node = api && api.table && api.table().node();
         if (node && $.fn.dataTable && $.fn.dataTable.isDataTable(node)) {
@@ -21,12 +21,16 @@ function destroyImgwTableInstances() {
             $(this).DataTable().destroy();
         }
     });
-    $('.imgw-table-new .imgw-dt-export').empty();
+    $('.imgw-table-new').not('.analiza-app').find('.imgw-dt-export').empty();
+}
+
+function imgwTableRoot() {
+    return $('.imgw-table-new').not('.analiza-app');
 }
 
 function initImgwDataTable() {
     destroyImgwDataTable();
-    var $root = $('.imgw-table-new');
+    var $root = imgwTableRoot();
     if (!$root.length || !$.fn.DataTable) {
         return;
     }
@@ -35,9 +39,11 @@ function initImgwDataTable() {
     if (imgwTableHourIndex < 0 || imgwTableHourIndex >= imgwTableFrames.length) {
         imgwTableHourIndex = Math.max(0, imgwTableFrames.length - 1);
     }
+    ensureImgwRegionSearch();
     bindImgwTableNav($root);
     bindImgwSharedSearch($root);
     bindImgwSharedFilters($root);
+    bindImgwRegionSwitch($root);
     startImgwTableGrid($root);
     syncImgwTableHourUi();
 }
@@ -64,10 +70,17 @@ function startImgwTableGrid($root) {
             }
         }
     };
-    var dtOpts = {
+    var $table = $root.find('#imgw-datatable');
+    if (!$table.length) {
+        return;
+    }
+    var api = $table.DataTable({
         autoWidth: false,
-        pageLength: 100,
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'max']],
+        scrollX: true,
+        scrollY: '200px',
+        scrollCollapse: false,
+        pageLength: -1,
+        lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'max']],
         order: [],
         orderClasses: false,
         stripeClasses: [],
@@ -86,19 +99,20 @@ function startImgwTableGrid($root) {
             emptyTable: 'Brak danych',
             paginate: { first: 'Pierwsza', last: 'Ostatnia', next: '›', previous: '‹' }
         }
-    };
-
-    ['imgw-datatable-pl', 'imgw-datatable-eu'].forEach(function (id) {
-        var $table = $('#' + id);
-        if ($table.length) {
-            imgwDtTables.push($table.DataTable(dtOpts));
-        }
     });
-    if (!imgwDtTables.length) {
-        return;
-    }
-    bindImgwSharedOrder();
+    $(api.table().container()).addClass('imgw-dt');
+    imgwDtTables.push(api);
     bindImgwSharedExport($root, title, filename, exportOpts);
+    api.on('draw', function () {
+        fitImgwTableScroll($root);
+    });
+    var layoutScroll = function () {
+        fitImgwTableScroll($root);
+        api.columns.adjust();
+    };
+    layoutScroll();
+    requestAnimationFrame(layoutScroll);
+    $(window).on('resize.imgwTable', layoutScroll);
 }
 
 function applyImgwTableFilters($root) {
@@ -137,53 +151,45 @@ function bindImgwSharedFilters($root) {
     });
 }
 
-function bindImgwSharedOrder() {
-    imgwDtTables.forEach(function (api, idx) {
-        api.on('order.dt', function () {
-            if (imgwDtSyncingOrder) {
-                return;
-            }
-            imgwDtSyncingOrder = true;
-            var order = api.order();
-            imgwDtTables.forEach(function (other, otherIdx) {
-                if (otherIdx !== idx) {
-                    other.order(order).draw(false);
-                }
-            });
-            imgwDtSyncingOrder = false;
+function bindImgwRegionSwitch($root) {
+    $root.find('.imgw-dt-region-btn').on('click', function () {
+        var region = this.getAttribute('data-region') || 'all';
+        $root.attr('data-region', region);
+        $root.find('.imgw-dt-region-btn').removeClass('is-active');
+        $(this).addClass('is-active');
+        applyImgwTableFilters($root);
+        imgwDtTables.forEach(function (api) {
+            api.columns.adjust();
         });
     });
 }
 
-function imgwMergedExportData(exportOpts) {
-    var header = imgwDtTables[0].buttons.exportData(exportOpts).header;
-    var body = [];
-    var labels = { 'imgw-datatable-pl': 'Polska', 'imgw-datatable-eu': 'Europa' };
-    imgwDtTables.forEach(function (api) {
-        var exported = api.buttons.exportData(exportOpts);
-        if (!exported.body.length) {
-            return;
-        }
-        var id = api.table().node().id;
-        var section = ['— ' + (labels[id] || id) + ' —'];
-        while (section.length < exported.header.length) {
-            section.push('');
-        }
-        body.push(section);
-        Array.prototype.push.apply(body, exported.body);
-    });
-    return { header: header, body: body };
+function imgwRegionSearch(settings, _data, dataIndex) {
+    if (!settings.nTable || settings.nTable.id !== 'imgw-datatable') {
+        return true;
+    }
+    var root = imgwTableRoot()[0];
+    var mode = root ? (root.getAttribute('data-region') || 'all') : 'all';
+    if (mode === 'all') {
+        return true;
+    }
+    var row = settings.aoData[dataIndex] && settings.aoData[dataIndex].nTr;
+    var europe = row && row.getAttribute('data-europe') === '1';
+    return mode === 'eu' ? europe : !europe;
 }
 
-function imgwApplyMergedData(data, exportOpts) {
-    var merged = imgwMergedExportData(exportOpts);
-    data.header = merged.header;
-    data.body.splice(0, data.body.length);
-    Array.prototype.push.apply(data.body, merged.body);
+function ensureImgwRegionSearch() {
+    if (!$.fn.dataTable || !$.fn.dataTable.ext || !$.fn.dataTable.ext.search) {
+        return;
+    }
+    var list = $.fn.dataTable.ext.search;
+    if (list.indexOf(imgwRegionSearch) === -1) {
+        list.push(imgwRegionSearch);
+    }
 }
 
 function bindImgwSharedExport($root, title, filename, exportOpts) {
-    if (!$.fn.dataTable.Buttons) {
+    if (!$.fn.dataTable.Buttons || !imgwDtTables.length) {
         return;
     }
     var host = imgwDtTables[0];
@@ -194,10 +200,7 @@ function bindImgwSharedExport($root, title, filename, exportOpts) {
                 text: 'XLS',
                 title: title,
                 filename: filename,
-                exportOptions: exportOpts,
-                customizeData: function (data) {
-                    imgwApplyMergedData(data, exportOpts);
-                }
+                exportOptions: exportOpts
             },
             {
                 extend: 'pdfHtml5',
@@ -207,9 +210,6 @@ function bindImgwSharedExport($root, title, filename, exportOpts) {
                 orientation: 'landscape',
                 pageSize: 'A4',
                 exportOptions: exportOpts,
-                customizeData: function (data) {
-                    imgwApplyMergedData(data, exportOpts);
-                },
                 customize: function (doc) {
                     doc.defaultStyle.fontSize = 8;
                     doc.styles.tableHeader.fontSize = 9;
@@ -219,4 +219,32 @@ function bindImgwSharedExport($root, title, filename, exportOpts) {
         ]
     });
     host.buttons().container().appendTo($root.find('.imgw-dt-export'));
+}
+
+function fitImgwTableScroll($root) {
+    var $body = $root.find('.imgw-table-stage-body');
+    var $scroll = $root.find('.dt-scroll-body');
+    if (!$body.length || !$scroll.length) {
+        return;
+    }
+    var used = 0;
+    $body.children().each(function () {
+        if (!$(this).hasClass('dt-container')) {
+            used += $(this).outerHeight(true) || 0;
+        }
+    });
+    $root.find('.imgw-dt').children().each(function () {
+        if (!$(this).find('.dt-scroll').length) {
+            used += $(this).outerHeight(true) || 0;
+        }
+    });
+    used += $root.find('.dt-scroll-head').outerHeight(true) || 0;
+    var $dt = $root.find('.imgw-dt');
+    used += (parseFloat($dt.css('padding-top')) || 0) + (parseFloat($dt.css('padding-bottom')) || 0);
+    used += 2;
+    var height = Math.floor($body.height() - used);
+    if (height < 140) {
+        height = 140;
+    }
+    $scroll.css({ height: height + 'px', maxHeight: height + 'px' });
 }

@@ -8,9 +8,10 @@
             $rowsPl[] = $row;
         }
     }
+    $rows = array_merge($rowsPl, $rowsEu);
 @endphp
-@if(!empty($data['rows']))
-    <div class="imgw-table-new" data-hour="{{ $data['actualHour'] }}" data-current="{{ (int) ($data['current'] ?? 0) }}">
+@if(!empty($rows))
+    <div class="imgw-table-new" data-hour="{{ $data['actualHour'] }}" data-current="{{ (int) ($data['current'] ?? 0) }}" data-region="all">
         @include('klient.partials.imgw-hour-nav', ['prefix' => 'imgw-table', 'data' => $data])
         @if(!empty($data['pressure']))
             <div class="pressure imgw-dt-pressure">{!! $data['pressure'] !!}</div>
@@ -20,6 +21,11 @@
             <div class="imgw-dt-legend">
                 <span><span class="imgw-dt-swatch imgw-delay-1"></span> dane sprzed godziny</span>
                 <span><span class="imgw-dt-swatch imgw-delay-2"></span> dane sprzed dwóch godzin</span>
+            </div>
+            <div class="imgw-dt-region" role="group" aria-label="Zakres stacji">
+                <button type="button" class="imgw-dt-region-btn is-active" data-region="all">Wszystkie</button>
+                <button type="button" class="imgw-dt-region-btn" data-region="pl">Polska</button>
+                <button type="button" class="imgw-dt-region-btn" data-region="eu">Europa</button>
             </div>
             <label class="imgw-dt-search-label">Szukaj:
                 <input type="search" id="imgw-dt-search" placeholder="Miejscowość, zjawisko…">
@@ -38,22 +44,11 @@
         <div class="imgw-table-stage">
             <button type="button" class="imgw-map-step imgw-table-step imgw-map-step-prev" data-dir="-1" title="Cofnij o 1 godzinę" data-tip="Tryb ręczny: cofnij o 1 godzinę">‹</button>
             <div class="imgw-table-stage-body">
-                @if(!empty($rowsPl))
-                    @include('klient.partials.imgw-table-new-section', [
-                        'id' => 'imgw-datatable-pl',
-                        'title' => 'Polska',
-                        'regionLabel' => 'Województwo',
-                        'rows' => $rowsPl,
-                    ])
-                @endif
-                @if(!empty($rowsEu))
-                    @include('klient.partials.imgw-table-new-section', [
-                        'id' => 'imgw-datatable-eu',
-                        'title' => 'Europa',
-                        'regionLabel' => 'Region',
-                        'rows' => $rowsEu,
-                    ])
-                @endif
+                @include('klient.partials.imgw-table-new-section', [
+                    'id' => 'imgw-datatable',
+                    'regionLabel' => 'Województwo / region',
+                    'rows' => $rows,
+                ])
             </div>
             <button type="button" class="imgw-map-step imgw-table-step imgw-map-step-next" data-dir="1" title="Do przodu o 1 godzinę" data-tip="Tryb ręczny: do przodu o 1 godzinę">›</button>
         </div>
