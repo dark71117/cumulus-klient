@@ -1,0 +1,185 @@
+.gfs-app {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    background: #ece9d8;
+    color: #111;
+    font: 11px Tahoma, "Segoe UI", sans-serif;
+}
+.gfs-rail {
+    display: flex;
+    flex-direction: column;
+    width: 26px;
+    background: #d8d4c4;
+    border-right: 1px solid #9a9a9a;
+}
+.gfs-rail-btn {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    border: 1px solid #8d8d8d;
+    background: #f4f1e4;
+    margin: 2px;
+    padding: 8px 2px;
+    cursor: pointer;
+    font: inherit;
+}
+.gfs-rail-btn.is-on {
+    background: #f0a020;
+    font-weight: 700;
+}
+.gfs-products {
+    width: 148px;
+    overflow: auto;
+    background: #f7f5ea;
+    border-right: 1px solid #9a9a9a;
+    padding: 4px;
+}
+.gfs-group {
+    border: 1px solid #b5b5b5;
+    margin: 0 0 6px;
+    padding: 4px;
+}
+.gfs-group legend {
+    padding: 0 3px;
+    font-weight: 700;
+}
+.gfs-param {
+    display: block;
+    width: 100%;
+    margin: 2px 0;
+    padding: 3px 4px;
+    text-align: left;
+    font: inherit;
+    background: #fff;
+    border: 1px solid #8a8a8a;
+    cursor: pointer;
+}
+.gfs-param.is-on,
+.gfs-regions button.is-on,
+.gfs-days button.is-on,
+.gfs-hours button.is-on {
+    background: #f0a020;
+    border-color: #b67800;
+    font-weight: 700;
+}
+.gfs-empty {
+    margin: 4px;
+    line-height: 1.35;
+}
+.gfs-stage {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    background: #fff;
+}
+.gfs-caption {
+    position: absolute;
+    top: 6px;
+    left: 0;
+    right: 46px;
+    z-index: 2;
+    text-align: center;
+    pointer-events: none;
+    line-height: 1.25;
+}
+.gfs-caption strong {
+    font-size: 15px;
+    font-weight: 600;
+}
+.gfs-panes {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+    background: #c8c8c8;
+}
+.gfs-panes[data-n="1"] { grid-template-columns: 1fr; }
+.gfs-panes[data-n="2"] { grid-template-columns: 1fr 1fr; }
+.gfs-panes[data-n="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.gfs-pane {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    background: #fff;
+    overflow: hidden;
+}
+.gfs-pane.is-active { outline: 2px solid #f0a020; outline-offset: -2px; }
+.gfs-view {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+}
+.gfs-view img {
+    display: block;
+    max-width: none;
+    transform-origin: 0 0;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.gfs-missing {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+.gfs-missing[hidden] {
+    display: none !important;
+}
+.gfs-zoom {
+    width: 42px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0;
+    background: #f3f3f3;
+    border-left: 1px solid #ddd;
+}
+.gfs-zoom input[type="range"] {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    height: 180px;
+    margin: 0;
+}
+.gfs-side {
+    width: 168px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+    background: #f3f3f3;
+    border-left: 1px solid #bdbdbd;
+}
+.gfs-stan { text-align: right; font-weight: 700; }
+.gfs-run, .gfs-layout { width: 100%; font: inherit; }
+.gfs-regions { display: flex; gap: 4px; }
+.gfs-regions button { flex: 1; font: inherit; padding: 4px 0; cursor: pointer; border: 1px solid #8a8a8a; background: #fff; }
+.gfs-days, .gfs-hours { display: flex; flex-wrap: wrap; gap: 2px; }
+.gfs-days button, .gfs-hours button, .gfs-step button {
+    font: inherit;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 2px;
+    border: 1px solid #7f93a8;
+    background: #d5e2ee;
+    cursor: pointer;
+}
+.gfs-hours button:disabled, .gfs-days button:disabled {
+    background: #eee;
+    color: #aaa;
+    cursor: default;
+}
+.gfs-step { display: flex; justify-content: center; gap: 8px; }
+.gfs-step button { background: #ffe14a; border-color: #c6a400; min-width: 28px; font-weight: 700; }
+.gfs-status {
+    margin-top: auto;
+    background: #1d4e89;
+    color: #fff;
+    padding: 6px;
+    line-height: 1.35;
+}

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AnalizaController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\GfsMapController;
 use App\Http\Controllers\IpAdminController;
 use App\Http\Controllers\KlientController;
 use App\Http\Middleware\EnsureAdmin;
@@ -28,6 +29,10 @@ Route::prefix('klient')->group(function () {
         Route::get('/mmregion', [KlientController::class, 'mmRegion']);
         Route::get('/mmchart/{id}/{product?}/{print?}', [KlientController::class, 'mmChart']);
         Route::get('/mmpng/{id}', [KlientController::class, 'mmPng']);
+        Route::get('/gfs/klatki/{run}/{region}/{product}', [GfsMapController::class, 'frames'])
+            ->where(['run' => '\d{4}\.\d{2}\.\d{2}\.\d{2}', 'region' => 'Polska|Europa', 'product' => '[A-Za-z0-9_]+']);
+        Route::get('/gfs/obraz/{run}/{region}/{product}/{hour}', [GfsMapController::class, 'image'])
+            ->where(['run' => '\d{4}\.\d{2}\.\d{2}\.\d{2}', 'region' => 'Polska|Europa', 'product' => '[A-Za-z0-9_]+', 'hour' => '\d{3}']);
         Route::middleware(EnsureAdmin::class)->group(function () {
             Route::get('/ipadmin', [IpAdminController::class, 'index'])->name('klient.ipadmin');
             Route::post('/ipadmin', [IpAdminController::class, 'index']);

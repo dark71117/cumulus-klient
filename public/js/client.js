@@ -108,7 +108,7 @@ $(document).ready(function () {
         destroyImgwLeaflet();
         destroyImgwDataTable();
         destroyAnaliza();
-        contentDiv.removeClass('has-map has-analiza has-imgw-table');
+        contentDiv.removeClass('has-map has-analiza has-imgw-table has-gfs');
         contentDiv.html('');
         $('#addonsTabs').removeClass('is-open');
         clearNavActive();
@@ -233,9 +233,11 @@ function loadContent(tab, position) {
             var hasClassic = contentDiv.find('.actualMapStage').length > 0;
             var hasAnaliza = contentDiv.find('.analiza-app').length > 0;
             var hasImgwTable = contentDiv.find('.imgw-table-new').not('.analiza-app').length > 0;
+            var hasGfs = contentDiv.find('.gfs-app').length > 0;
             contentDiv.toggleClass('has-map', hasLeaflet || hasClassic);
             contentDiv.toggleClass('has-analiza', hasAnaliza);
             contentDiv.toggleClass('has-imgw-table', hasImgwTable);
+            contentDiv.toggleClass('has-gfs', hasGfs);
             if (hasAnaliza || hasImgwTable) {
                 setContentDivHeight();
             }
@@ -247,6 +249,8 @@ function loadContent(tab, position) {
                 initAnaliza();
             } else if (hasImgwTable) {
                 initImgwDataTable();
+            } else if (hasGfs) {
+                initGfsMap();
             }
         },
         complete: hideLoading
@@ -291,7 +295,7 @@ function loadIpAdmin(url, method, data) {
             destroyImgwLeaflet();
             destroyImgwDataTable();
             destroyAnaliza();
-            contentDiv.removeClass('has-map has-analiza has-imgw-table');
+            contentDiv.removeClass('has-map has-analiza has-imgw-table has-gfs');
             contentDiv.html(html);
             setContentDivHeight();
         },

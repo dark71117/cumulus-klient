@@ -15,6 +15,7 @@ return [
     'ogimet_range_url' => env('CUMULUS_OGIMET_RANGE_URL', 'https://www.ogimet.com/cgi-bin/getsynop'),
     'ogimet_timeout' => (int) env('CUMULUS_OGIMET_TIMEOUT', 90),
     'ogimet_schedule' => filter_var(env('CUMULUS_OGIMET_SCHEDULE', false), FILTER_VALIDATE_BOOLEAN),
+    'gfs_maps_path' => env('CUMULUS_GFS_MAPS_PATH', '/home/meteomax-data/maps'),
     'tv_files_dir' => env('CUMULUS_TV_FILES', '/pliki/tv'),
     'tv_files' => [
         'satPhotoSD' => ['file' => 'sat_SD_', 'a' => 'Zdjęcie satelitarne: sat_SD_'],

@@ -152,6 +152,7 @@ class KlientController extends Controller
             $tab === 'imgwMapNew2Tab' => $this->imgwMapNewHtml(true),
             $tab === 'gddkiaRegionTab' => $this->gddkiaCountiesHtml(),
             $tab === 'gddkiaRoadTab' => $this->gddkiaRoadsHtml(),
+            $tab === 'gfsMapTab' => app(GfsMapController::class)->page(),
             $tab === 'forecast5Tab' => $this->meteomaxHtml(),
             default => '',
         };

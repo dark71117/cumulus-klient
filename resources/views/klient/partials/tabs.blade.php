@@ -12,6 +12,7 @@
         <div class="t1a nav-btn{{ $flag('IMGW') ? '' : ' hidden' }}" id="analizaTab" data-tip="Przegląd depesz SYNOP, skok do daty i statystyki stacji" title="Przegląd depesz SYNOP, skok do daty i statystyki stacji">Analiza</div>
         <div class="t1a nav-btn{{ $flag('IMGW') ? '' : ' hidden' }}" id="imgwTab" data-tip="Tabela synoptyczna IMGW" title="Tabela synoptyczna IMGW">Tabela</div>
         <div class="t1a nav-btn{{ $flag('mapaWarunkow') ? '' : ' hidden' }}" id="imgwMapTab" data-tip="Klasyczna mapa bitmapowa IMGW" title="Klasyczna mapa bitmapowa IMGW">Mapa</div>
+        <div class="t1a nav-btn" id="gfsMapTab" data-tip="Mapa synoptyka v.3, te same mapy GFS co w programie na biurku" title="Mapa synoptyka v.3, te same mapy GFS co w programie na biurku">Mapy GFS</div>
         <div class="t1a nav-btn" id="addonsTab" data-tip="Pozostałe narzędzia panelu" title="Pozostałe narzędzia panelu">Dodatki</div>
     </div>
     <div class="tabs2 nav-sub" id="addonsTabs">

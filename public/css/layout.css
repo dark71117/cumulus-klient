@@ -1189,6 +1189,16 @@ body.layout-app {
 .leaflet-tooltip.imgw-pin-tip::before {
     border-top-color: #1a2430;
 }
+.layout-app .main_frame #content.has-gfs {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #d9d9d9;
+}
+.layout-app #content.has-gfs .gfs-app {
+    flex: 1;
+    min-height: 0;
+}
 @media (max-width: 900px) {
     .app-shell { grid-template-columns: 220px minmax(0, 1fr); }
 }
