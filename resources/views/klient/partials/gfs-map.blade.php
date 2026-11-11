@@ -48,9 +48,20 @@
         <div class="gfs-days"></div>
         <div class="gfs-hours"></div>
         <div class="gfs-step">
+            <button type="button" class="gfs-auto" data-auto="-1" title="Przewijaj automatycznie wstecz" aria-label="Przewijaj automatycznie wstecz">◀</button>
             <button type="button" data-dir="-1" title="Poprzednia godzina">&lt;&lt;</button>
             <button type="button" data-dir="1" title="Następna godzina">&gt;&gt;</button>
+            <button type="button" class="gfs-auto" data-auto="1" title="Przewijaj automatycznie w przód" aria-label="Przewijaj automatycznie w przód">▶</button>
         </div>
+        <label class="gfs-delay">Zwłoka
+            <select class="gfs-delay-select" aria-label="Zwłoka między godzinami">
+                <option value="1">1 s</option>
+                <option value="2">2 s</option>
+                <option value="3" selected>3 s</option>
+                <option value="5">5 s</option>
+                <option value="10">10 s</option>
+            </select>
+        </label>
         <button type="button" class="gfs-screen" title="Rozciągnij mapy na cały ekran">PEŁNY EKRAN</button>
         <div class="gfs-status">
             <div>STATUS meteomax.pl</div>

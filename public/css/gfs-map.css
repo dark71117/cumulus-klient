@@ -183,13 +183,28 @@
     border-color: #1d4e89;
     font-weight: 700;
 }
+.gfs-hours button.is-range {
+    flex: 1 0 42px;
+    min-width: 42px;
+    padding: 0 2px;
+}
 .gfs-hours button:disabled, .gfs-days button:disabled {
     background: #eee;
     color: #aaa;
     cursor: default;
 }
-.gfs-step { display: flex; justify-content: center; gap: 8px; }
+.gfs-step { display: flex; justify-content: center; gap: 3px; }
 .gfs-step button { background: #ffe14a; border-color: #c6a400; min-width: 28px; font-weight: 700; }
+.gfs-step .gfs-auto { background: #fff; border-color: #1d4e89; color: #1d4e89; }
+.gfs-step .gfs-auto.is-playing { background: #c0392b; border-color: #8e241b; color: #fff; }
+.gfs-delay {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    font-weight: 700;
+}
+.gfs-delay select { font: inherit; min-width: 0; flex: 1; }
 .gfs-screen {
     margin-top: auto;
     width: 100%;

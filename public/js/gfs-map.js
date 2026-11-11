@@ -208,30 +208,55 @@ function initGfsMap() {
         return parts.join(' — ');
     }
 
-    function dayCount(day) {
+    function daySum(day) {
+        var products = active().coverage && active().coverage.total;
         var hours = active().coverage && active().coverage.hours;
-        if (!hours || !day.clocks.length) return 0;
-        var least = 0;
-        day.clocks.forEach(function (item) {
-            var count = hours[item.lead] || 0;
-            if (!least || count < least) least = count;
+        if (!products || !hours || !day.clocks.length) return null;
+        var got = 0;
+        day.clocks.forEach(function (item) { got += hours[item.lead] || 0; });
+        return { got: got, max: day.clocks.length * products };
+    }
+
+    function pad2(hour) {
+        return String(hour).padStart(2, '0');
+    }
+
+    function hourGroups(clocks) {
+        var byClock = {};
+        clocks.forEach(function (item) { byClock[item.clock] = item.lead; });
+        var present = Object.keys(byClock).map(function (clock) { return parseInt(clock, 10); });
+        present.sort(function (a, b) { return a - b; });
+        if (present.length < 2) {
+            return present.map(function (hour) {
+                return { start: hour, end: hour, lead: byClock[pad2(hour)], span: 1 };
+            });
+        }
+        var step = 24;
+        for (var i = 1; i < present.length; i++) step = Math.min(step, present[i] - present[i - 1]);
+        if (step < 3) {
+            var singles = [];
+            for (var hour = 0; hour < 24; hour++) {
+                singles.push({ start: hour, end: hour, lead: byClock[pad2(hour)] || '', span: 1 });
+            }
+            return singles;
+        }
+        return present.map(function (hour) {
+            var start = hour - step + 1;
+            if (start < 0) start += 24;
+            return { start: start, end: hour, lead: byClock[pad2(hour)], span: step };
         });
-        return least;
+    }
+
+    function groupLabel(group) {
+        var start = pad2(group.start);
+        var end = pad2(group.end);
+        return start === end ? start : start + '-' + end;
     }
 
     function fillState(count) {
         var total = active().coverage && active().coverage.total;
         if (!total || !count) return '';
         return count >= total ? 'complete' : 'partial';
-    }
-
-    function dayFillState(day) {
-        var hours = active().coverage && active().coverage.hours;
-        if (!hours || !day.clocks.length) return '';
-        var states = day.clocks.map(function (item) { return fillState(hours[item.lead] || 0); });
-        if (states.every(function (stateName) { return stateName === 'complete'; })) return 'complete';
-        if (states.some(function (stateName) { return stateName === 'partial' || stateName === 'complete'; })) return 'partial';
-        return '';
     }
 
     function markFill(button, stateName) {
@@ -401,38 +426,44 @@ function initGfsMap() {
             button.type = 'button';
             button.textContent = day.label;
             var dayFresh = day.clocks.some(function (item) { return active().fresh && active().fresh[item.lead]; });
-            var dateCount = dayCount(day);
-            var dayTip = [day.date, describeMaps(dateCount, dayFresh)].filter(Boolean).join(' — ');
+            var sum = daySum(day);
+            var dayText = sum ? (sum.got + ' z ' + sum.max + ' map' + (sum.got >= sum.max ? ', komplet' : '')) : '';
+            if (dayFresh && dayText) dayText += ' — nowa mapa';
+            var dayTip = [day.date, dayText].filter(Boolean).join(' — ');
             setTip(button, dayTip);
-            markFill(button, dayFillState(day));
+            markFill(button, !sum ? '' : (sum.got >= sum.max ? 'complete' : 'partial'));
             if (dayFresh) button.classList.add('is-fresh');
             if (current && current.day.date === day.date) button.classList.add('is-on');
-            button.addEventListener('click', function () { pickDay(day); });
+            button.addEventListener('click', function () {
+                stopPlay();
+                pickDay(day);
+            });
             daysBox.appendChild(button);
         });
-        var clocks = {};
-        if (current) {
-            current.day.clocks.forEach(function (item) { clocks[item.clock] = item.lead; });
-        }
-        for (var hour = 0; hour < 24; hour++) {
-            var label = String(hour).padStart(2, '0');
+        var groups = hourGroups(current ? current.day.clocks : []);
+        groups.forEach(function (group) {
             var button = document.createElement('button');
             button.type = 'button';
-            button.textContent = label;
-            var lead = clocks[label];
+            button.textContent = groupLabel(group);
+            var lead = group.lead;
             if (!lead) button.disabled = true;
+            if (group.span > 1) {
+                button.classList.add('is-range');
+                button.style.flexGrow = String(group.span);
+            }
             var hourFresh = !!(lead && active().fresh && active().fresh[lead]);
             var hourCount = lead && active().coverage ? active().coverage.hours[lead] : 0;
             setTip(button, describeMaps(hourCount, hourFresh));
             markFill(button, fillState(hourCount));
             if (hourFresh) button.classList.add('is-fresh');
-            if (current && current.clock === label) button.classList.add('is-on');
-            button.addEventListener('click', function (event) {
-                var key = event.currentTarget.textContent;
-                if (clocks[key]) setLead(clocks[key]);
+            if (current && parseInt(current.clock, 10) === group.end) button.classList.add('is-on');
+            button.addEventListener('click', function () {
+                if (!lead) return;
+                stopPlay();
+                setLead(lead);
             });
             hoursBox.appendChild(button);
-        }
+        });
         root.querySelector('.gfs-valid-date').textContent = current ? current.day.date : '';
         root.querySelector('.gfs-valid-time').textContent = current ? (current.clock + ':00Z (+' + state.lead + ')') : '';
         root.querySelector('.gfs-stan').textContent = 'Stan: ' + (active().count || 0);
@@ -460,9 +491,87 @@ function initGfsMap() {
         var hours = active().hours;
         var index = hours.indexOf(state.lead);
         var next = index + dir;
-        if (next < 0 || next >= hours.length) return;
+        if (next < 0 || next >= hours.length) return false;
         setLead(hours[next]);
+        return true;
     }
+
+    var playDelays = [1, 2, 3, 5, 10];
+    var playKey = 'cumulus_gfs_autoplay_delay_sec';
+    var playTimer = null;
+    var playDir = 0;
+
+    function readDelay() {
+        try {
+            var sec = parseInt(localStorage.getItem(playKey), 10);
+            if (playDelays.indexOf(sec) !== -1) return sec;
+        } catch (e) {}
+        return 3;
+    }
+
+    function writeDelay(sec) {
+        try { localStorage.setItem(playKey, String(sec)); } catch (e) {}
+    }
+
+    function delayMs() {
+        var select = root.querySelector('.gfs-delay-select');
+        var sec = select ? parseInt(select.value, 10) : 3;
+        return (playDelays.indexOf(sec) === -1 ? 3 : sec) * 1000;
+    }
+
+    function syncPlayButtons() {
+        root.querySelectorAll('.gfs-auto').forEach(function (button) {
+            var dir = parseInt(button.dataset.auto, 10);
+            var on = playDir === dir;
+            button.classList.toggle('is-playing', on);
+            button.textContent = on ? 'II' : (dir < 0 ? '◀' : '▶');
+            var label = on
+                ? 'Zatrzymaj przewijanie'
+                : (dir < 0 ? 'Przewijaj automatycznie wstecz' : 'Przewijaj automatycznie w przód');
+            button.title = label;
+            button.setAttribute('aria-label', label);
+        });
+    }
+
+    function stopPlay() {
+        if (playTimer) {
+            clearInterval(playTimer);
+            playTimer = null;
+        }
+        playDir = 0;
+        syncPlayButtons();
+    }
+
+    function tickPlay() {
+        if (!document.body.contains(root)) {
+            stopPlay();
+            return;
+        }
+        var hours = active().hours || [];
+        if (hours.indexOf(state.lead) < 0 || !step(playDir)) stopPlay();
+    }
+
+    function startPlay(dir) {
+        if (playDir === dir) {
+            stopPlay();
+            return;
+        }
+        if (playTimer) {
+            clearInterval(playTimer);
+            playTimer = null;
+        }
+        playDir = 0;
+        if (!step(dir)) {
+            syncPlayButtons();
+            return;
+        }
+        playDir = dir;
+        syncPlayButtons();
+        playTimer = setInterval(tickPlay, delayMs());
+    }
+
+    if (window.__gfsStopPlay) window.__gfsStopPlay();
+    window.__gfsStopPlay = stopPlay;
 
     function markProduct() {
         root.querySelectorAll('.gfs-param').forEach(function (button) {
@@ -514,8 +623,29 @@ function initGfsMap() {
         item.panX = null;
         place(state.active);
     });
-    root.querySelectorAll('.gfs-step button').forEach(function (button) {
-        button.addEventListener('click', function () { step(parseInt(button.dataset.dir, 10)); });
+    var delaySelect = root.querySelector('.gfs-delay-select');
+    if (delaySelect) {
+        delaySelect.value = String(readDelay());
+        delaySelect.addEventListener('change', function () {
+            var sec = parseInt(delaySelect.value, 10);
+            if (playDelays.indexOf(sec) === -1) sec = 3;
+            delaySelect.value = String(sec);
+            writeDelay(sec);
+            if (!playDir) return;
+            if (playTimer) clearInterval(playTimer);
+            playTimer = setInterval(tickPlay, sec * 1000);
+        });
+    }
+    root.querySelectorAll('.gfs-auto').forEach(function (button) {
+        button.addEventListener('click', function () {
+            startPlay(parseInt(button.dataset.auto, 10));
+        });
+    });
+    root.querySelectorAll('.gfs-step button[data-dir]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            stopPlay();
+            step(parseInt(button.dataset.dir, 10));
+        });
     });
     var screenBtn = root.querySelector('.gfs-screen');
     function setScreen(full) {
@@ -534,12 +664,16 @@ function initGfsMap() {
         var tag = event.target && event.target.tagName;
         if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
         if (event.key === 'Escape' && root.classList.contains('is-full')) setScreen(false);
+        if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') stopPlay();
         if (event.key === 'ArrowRight') step(1);
         if (event.key === 'ArrowLeft') step(-1);
     });
     $(window).off('resize.gfs').on('resize.gfs', function () {
         if (!document.getElementById('gfs-app')) return;
         for (var i = 0; i < state.layout; i++) place(i);
+    });
+    $(document).off('visibilitychange.gfs').on('visibilitychange.gfs', function () {
+        if (document.hidden) stopPlay();
     });
 
     renderPanes();

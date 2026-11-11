@@ -52,7 +52,13 @@ class GfsMapTest extends TestCase
             ->assertSee('2026.11.10.06', false)
             ->assertSee('>Polska<', false)
             ->assertSee('>Europa<', false)
-            ->assertSee('PEŁNY EKRAN', false);
+            ->assertSee('PEŁNY EKRAN', false)
+            ->assertSee('Przewijaj automatycznie wstecz', false)
+            ->assertSee('Przewijaj automatycznie w przód', false)
+            ->assertSee('Zwłoka', false)
+            ->assertSee('gfs-delay-select', false)
+            ->assertSee('>1 s<', false)
+            ->assertSee('>10 s<', false);
     }
 
     public function test_image_and_frames_follow_run_region_and_fallback_file(): void
