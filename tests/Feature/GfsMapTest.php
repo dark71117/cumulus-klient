@@ -106,6 +106,31 @@ class GfsMapTest extends TestCase
         $this->assertNull($service->imagePath('2026.11.10.06', 'Polska', 'synop3', '../01'));
     }
 
+    public function test_leads_from_100_stay_zero_padded_strings(): void
+    {
+        $png = file_get_contents($this->maps.'/2026.11.10.06/Polska/synop3.001.png');
+        file_put_contents($this->maps.'/2026.11.10.06/Polska/synop3.100.png', $png);
+        file_put_contents($this->maps.'/2026.11.10.06/Polska/synop3.123.png', $png);
+        $client = $this->makeClient();
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $frames = $this->getJson('/klient/gfs/klatki/2026.11.10.06/Polska/synop3')
+            ->assertOk()
+            ->json();
+
+        $this->assertSame(['001', '024', '100', '123'], $frames['hours']);
+        $this->assertIsString($frames['hours'][2]);
+        $this->assertIsString($frames['hours'][3]);
+        $leads = [];
+        foreach ($frames['days'] as $day) {
+            foreach ($day['clocks'] as $clock) {
+                $leads[] = $clock['lead'];
+            }
+        }
+        $this->assertSame(['001', '024', '100', '123'], $leads);
+    }
+
     public function test_frames_carry_file_time_and_runs_for_the_live_menu(): void
     {
         touch($this->maps.'/2026.11.10.06/Polska/synop3.001.png', 1700000000);

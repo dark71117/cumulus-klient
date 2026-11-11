@@ -6,14 +6,14 @@ function initGfsMap() {
     var boot = JSON.parse(bootNode.textContent);
     var state = {
         run: boot.run || '',
-        lead: boot.lead || '',
+        lead: asLead(boot.lead || ''),
         startup: true,
         layout: 1,
         active: 0,
         panes: [{
             region: boot.region || 'Polska',
             product: boot.product || 'synop3',
-            hours: (boot.frames && boot.frames.hours) || [],
+            hours: leadList(boot.frames && boot.frames.hours),
             days: (boot.frames && boot.frames.days) || [],
             count: (boot.frames && boot.frames.count) || 0,
             stamps: stampsOf(boot.frames && boot.frames.stamps),
@@ -41,6 +41,21 @@ function initGfsMap() {
 
     function pane(index) { return state.panes[index]; }
     function active() { return state.panes[state.active]; }
+
+    function asLead(value) {
+        var n = parseInt(value, 10);
+        if (isNaN(n)) return '';
+        return String(n).padStart(3, '0');
+    }
+
+    function leadList(list) {
+        return (list || []).map(asLead).filter(Boolean);
+    }
+
+    function shortDate(date) {
+        var bits = String(date || '').split('.');
+        return bits.length >= 2 ? bits[0] + '-' + bits[1] : '';
+    }
 
     function ensurePanes(count) {
         while (state.panes.length < count) {
@@ -345,7 +360,7 @@ function initGfsMap() {
     function applyFrames(index, data, keepLead, baseline) {
         var item = pane(index);
         var stamps = stampsOf(data.stamps);
-        item.hours = data.hours || [];
+        item.hours = leadList(data.hours);
         item.days = data.days || [];
         item.count = data.count || 0;
         if (!item.fresh) item.fresh = {};
@@ -359,6 +374,7 @@ function initGfsMap() {
         item.stamps = stamps;
         item.coverage = coverageOf(data.coverage);
         if (index === state.active) {
+            state.lead = asLead(state.lead);
             if (keepLead && item.hours.indexOf(state.lead) === -1) {
                 state.lead = nearest(item.hours, state.lead);
             }
@@ -407,7 +423,7 @@ function initGfsMap() {
         var days = active().days || [];
         for (var i = 0; i < days.length; i++) {
             for (var j = 0; j < days[i].clocks.length; j++) {
-                if (days[i].clocks[j].lead === state.lead) {
+                if (asLead(days[i].clocks[j].lead) === asLead(state.lead)) {
                     return { day: days[i], clock: days[i].clocks[j].clock };
                 }
             }
@@ -424,7 +440,14 @@ function initGfsMap() {
         (active().days || []).forEach(function (day) {
             var button = document.createElement('button');
             button.type = 'button';
-            button.textContent = day.label;
+            var name = document.createElement('span');
+            name.className = 'gfs-day-name';
+            name.textContent = day.label;
+            var when = document.createElement('span');
+            when.className = 'gfs-day-date';
+            when.textContent = shortDate(day.date);
+            button.appendChild(name);
+            button.appendChild(when);
             var dayFresh = day.clocks.some(function (item) { return active().fresh && active().fresh[item.lead]; });
             var sum = daySum(day);
             var dayText = sum ? (sum.got + ' z ' + sum.max + ' map' + (sum.got >= sum.max ? ', komplet' : '')) : '';
@@ -479,7 +502,7 @@ function initGfsMap() {
 
     function setLead(lead) {
         state.startup = false;
-        state.lead = lead;
+        state.lead = asLead(lead);
         var item = active();
         if (item.fresh) delete item.fresh[lead];
         renderClock();

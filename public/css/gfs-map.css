@@ -159,7 +159,7 @@
 .gfs-run, .gfs-layout { width: 100%; font: inherit; }
 .gfs-regions { display: flex; gap: 4px; }
 .gfs-regions button { flex: 1; font: inherit; padding: 4px 0; cursor: pointer; border: 1px solid #8a8a8a; background: #fff; }
-.gfs-days, .gfs-hours { display: flex; flex-wrap: wrap; gap: 2px; }
+.gfs-days, .gfs-hours { display: flex; flex-wrap: wrap; gap: 2px; flex-shrink: 0; }
 .gfs-days button, .gfs-hours button, .gfs-step button {
     font: inherit;
     min-width: 22px;
@@ -168,6 +168,24 @@
     border: 1px solid #7f93a8;
     background: #d5e2ee;
     cursor: pointer;
+}
+.gfs-days button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: calc((100% - 6px) / 4);
+    flex: 0 0 calc((100% - 6px) / 4);
+    height: auto;
+    min-width: 0;
+    min-height: 26px;
+    line-height: 1.05;
+    padding: 2px 0 1px;
+}
+.gfs-day-date {
+    font-size: 9px;
+    font-weight: 400;
+    line-height: 1;
 }
 .gfs-hours button.is-fresh:not(.is-on):not(.is-complete),
 .gfs-days button.is-fresh:not(.is-on):not(.is-complete),
@@ -184,8 +202,9 @@
     font-weight: 700;
 }
 .gfs-hours button.is-range {
-    flex: 1 0 42px;
-    min-width: 42px;
+    flex: 1 0 auto;
+    min-width: 36px;
+    height: 20px;
     padding: 0 2px;
 }
 .gfs-hours button:disabled, .gfs-days button:disabled {

@@ -45,7 +45,7 @@ class GfsMapService
             return null;
         }
         $stamps = $this->stamps($run, $region, $product);
-        $hours = array_keys($stamps);
+        $hours = $this->leadList($stamps);
         $coverage = $this->coverage($run, $region, $product, $tab);
 
         return [
@@ -91,7 +91,24 @@ class GfsMapService
 
     public function hours(string $run, string $region, string $product): array
     {
-        return array_keys($this->stamps($run, $region, $product));
+        return $this->leadList($this->stamps($run, $region, $product));
+    }
+
+    /**
+     * Klucze od 100 PHP zamienia na int, a json_encode wysyła je jako liczby.
+     * W przeglądarce "100" === 100 jest fałszem i od tej godziny znika wybór terminu.
+     *
+     * @param  array<int|string, mixed>  $stamps
+     * @return list<string>
+     */
+    private function leadList(array $stamps): array
+    {
+        $hours = [];
+        foreach (array_keys($stamps) as $hour) {
+            $hours[] = sprintf('%03d', (int) $hour);
+        }
+
+        return $hours;
     }
 
     public function stamps(string $run, string $region, string $product): array
