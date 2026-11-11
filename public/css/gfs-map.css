@@ -201,11 +201,13 @@
     border-color: #1d4e89;
     font-weight: 700;
 }
-.gfs-hours button.is-range {
-    flex: 1 0 auto;
-    min-width: 36px;
+.gfs-hours button.is-range,
+.gfs-hours button.is-exact {
+    box-sizing: border-box;
+    flex: 0 0 calc((100% - 6px) / 4);
+    min-width: 0;
     height: 20px;
-    padding: 0 2px;
+    padding: 0;
 }
 .gfs-hours button:disabled, .gfs-days button:disabled {
     background: #eee;

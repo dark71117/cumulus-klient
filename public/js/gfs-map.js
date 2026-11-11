@@ -256,16 +256,13 @@ function initGfsMap() {
             return singles;
         }
         return present.map(function (hour) {
-            var start = hour - step + 1;
-            if (start < 0) start += 24;
-            return { start: start, end: hour, lead: byClock[pad2(hour)], span: step };
+            return { start: hour, end: hour, lead: byClock[pad2(hour)], span: 1, exact: true };
         });
     }
 
     function groupLabel(group) {
-        var start = pad2(group.start);
-        var end = pad2(group.end);
-        return start === end ? start : start + '-' + end;
+        var hour = pad2(group.end);
+        return group.exact ? hour + ':00' : hour;
     }
 
     function fillState(count) {
@@ -470,7 +467,8 @@ function initGfsMap() {
             button.textContent = groupLabel(group);
             var lead = group.lead;
             if (!lead) button.disabled = true;
-            if (group.span > 1) {
+            if (group.exact) button.classList.add('is-exact');
+            else if (group.span > 1) {
                 button.classList.add('is-range');
                 button.style.flexGrow = String(group.span);
             }
