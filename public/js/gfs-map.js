@@ -15,6 +15,8 @@ function initGfsMap() {
             hours: (boot.frames && boot.frames.hours) || [],
             days: (boot.frames && boot.frames.days) || [],
             count: (boot.frames && boot.frames.count) || 0,
+            stamps: stampsOf(boot.frames && boot.frames.stamps),
+            fresh: {},
             zoom: 0,
             panX: 0,
             panY: 0
@@ -44,6 +46,8 @@ function initGfsMap() {
             copy.zoom = 0;
             copy.panX = 0;
             copy.panY = 0;
+            copy.stamps = null;
+            copy.fresh = {};
             state.panes.push(copy);
         }
         state.layout = count;
@@ -102,7 +106,9 @@ function initGfsMap() {
 
     function imageUrl(index) {
         var item = pane(index);
-        return boot.imageBase + '/' + state.run + '/' + item.region + '/' + item.product + '/' + state.lead;
+        var url = boot.imageBase + '/' + state.run + '/' + item.region + '/' + item.product + '/' + state.lead;
+        var stamp = item.stamps && item.stamps[state.lead];
+        return stamp ? url + '?t=' + stamp : url;
     }
 
     function paint(index) {
@@ -149,22 +155,117 @@ function initGfsMap() {
         img.style.transform = 'translate(' + item.panX + 'px,' + item.panY + 'px)';
     }
 
-    function loadFrames(index, keepLead) {
+    function stampsOf(raw) {
+        if (!raw || Array.isArray(raw)) return {};
+        return raw;
+    }
+
+    function utcNow() {
+        var now = new Date();
+        var pad = function (n) { return String(n).padStart(2, '0'); };
+        return {
+            date: pad(now.getUTCDate()) + '.' + pad(now.getUTCMonth() + 1) + '.' + now.getUTCFullYear(),
+            clock: pad(now.getUTCHours())
+        };
+    }
+
+    function watchingNow() {
+        var current = slot();
+        if (!current || !current.day) return false;
+        var now = utcNow();
+        if (current.day.date !== now.date) return false;
+        if (current.clock === now.clock) return true;
+        var clocks = current.day.clocks.map(function (item) { return item.clock; });
+        if (clocks.indexOf(now.clock) !== -1) return false;
+        var edge = '';
+        clocks.forEach(function (clock) {
+            if (clock <= now.clock && clock > edge) edge = clock;
+        });
+        return current.clock === edge;
+    }
+
+    var liveTimer = null;
+    var liveGen = 0;
+
+    function armLive() {
+        liveGen += 1;
+        if (liveTimer) clearTimeout(liveTimer);
+        liveTimer = null;
+        if (!watchingNow() || !root.isConnected) return;
+        var gen = liveGen;
+        liveTimer = setTimeout(function () {
+            liveTimer = null;
+            if (gen !== liveGen || !root.isConnected || !watchingNow()) return;
+            var left = state.layout;
+            for (var i = 0; i < state.layout; i++) {
+                loadFrames(i, true, true, function () {
+                    if (gen !== liveGen) return;
+                    if (--left === 0) armLive();
+                });
+            }
+        }, 10000);
+    }
+
+    function syncRuns(runs) {
+        if (!runs || !runs.length) return;
+        var current = Array.prototype.map.call(runSelect.options, function (option) { return option.value; }).join('|');
+        if (current === runs.join('|')) return;
+        var selected = state.run;
+        runSelect.innerHTML = '';
+        runs.forEach(function (run) {
+            var option = document.createElement('option');
+            option.value = run;
+            option.textContent = run;
+            if (run === selected) option.selected = true;
+            runSelect.appendChild(option);
+        });
+    }
+
+    function applyFrames(index, data, keepLead, baseline) {
         var item = pane(index);
-        if (!state.run) return;
+        var stamps = stampsOf(data.stamps);
+        item.hours = data.hours || [];
+        item.days = data.days || [];
+        item.count = data.count || 0;
+        if (!item.fresh) item.fresh = {};
+        if (!baseline) {
+            item.fresh = {};
+        } else {
+            Object.keys(stamps).forEach(function (lead) {
+                if (!baseline[lead] || baseline[lead] !== stamps[lead]) item.fresh[lead] = true;
+            });
+        }
+        item.stamps = stamps;
+        if (index === state.active) {
+            if (keepLead && item.hours.indexOf(state.lead) === -1) {
+                state.lead = nearest(item.hours, state.lead);
+            }
+            if (!keepLead) state.lead = item.hours[0] || '';
+            if (item.fresh[state.lead]) delete item.fresh[state.lead];
+            syncRuns(data.runs);
+            var nextKey = state.lead + '|' + item.hours.join(',') + '|' + Object.keys(item.fresh).sort().join(',');
+            if (nextKey !== item.clockKey) renderClock();
+        }
+        paint(index);
+    }
+
+    function loadFrames(index, keepLead, live, done) {
+        var item = pane(index);
+        if (!state.run) {
+            if (done) done();
+            return;
+        }
+        var baseline = live ? Object.assign({}, item.stamps || {}) : null;
+        item.req = (item.req || 0) + 1;
+        var req = item.req;
         $.getJSON(boot.framesBase + '/' + state.run + '/' + item.region + '/' + item.product)
             .done(function (data) {
-                item.hours = data.hours || [];
-                item.days = data.days || [];
-                item.count = data.count || 0;
-                if (index === state.active) {
-                    if (keepLead && item.hours.indexOf(state.lead) === -1) {
-                        state.lead = nearest(item.hours, state.lead);
-                    }
-                    if (!keepLead) state.lead = item.hours[0] || '';
-                    renderClock();
-                }
-                paint(index);
+                if (!root.isConnected || item.req !== req) return;
+                applyFrames(index, data, keepLead, baseline);
+            })
+            .always(function () {
+                if (done) done();
+                else if (!live && index === state.active && root.isConnected) armLive();
             });
     }
 
@@ -204,7 +305,12 @@ function initGfsMap() {
             button.type = 'button';
             button.textContent = day.label;
             button.title = day.date;
-            if (current && current.day.date === day.date) button.className = 'is-on';
+            var dayFresh = day.clocks.some(function (item) { return active().fresh && active().fresh[item.lead]; });
+            if (dayFresh) {
+                button.classList.add('is-fresh');
+                button.title = day.date + ' — nowa mapa';
+            }
+            if (current && current.day.date === day.date) button.classList.add('is-on');
             button.addEventListener('click', function () { pickDay(day); });
             daysBox.appendChild(button);
         });
@@ -217,8 +323,13 @@ function initGfsMap() {
             var button = document.createElement('button');
             button.type = 'button';
             button.textContent = label;
-            if (!clocks[label]) button.disabled = true;
-            if (current && current.clock === label) button.className = 'is-on';
+            var lead = clocks[label];
+            if (!lead) button.disabled = true;
+            if (lead && active().fresh && active().fresh[lead]) {
+                button.classList.add('is-fresh');
+                button.title = 'Nowa mapa';
+            }
+            if (current && current.clock === label) button.classList.add('is-on');
             button.addEventListener('click', function (event) {
                 var key = event.currentTarget.textContent;
                 if (clocks[key]) setLead(clocks[key]);
@@ -230,6 +341,8 @@ function initGfsMap() {
         root.querySelector('.gfs-stan').textContent = 'Stan: ' + (active().count || 0);
         var status = root.querySelector('.gfs-status-line');
         status.textContent = active().count ? ('GFS: ' + state.run) : 'GFS: brak map';
+        var freshKeys = Object.keys(active().fresh || {}).sort();
+        active().clockKey = state.lead + '|' + (active().hours || []).join(',') + '|' + freshKeys.join(',');
     }
 
     function pickDay(day) {
@@ -239,8 +352,11 @@ function initGfsMap() {
 
     function setLead(lead) {
         state.lead = lead;
+        var item = active();
+        if (item.fresh) delete item.fresh[lead];
         renderClock();
         for (var i = 0; i < state.layout; i++) paint(i);
+        armLive();
     }
 
     function step(dir) {
@@ -303,10 +419,23 @@ function initGfsMap() {
     root.querySelectorAll('.gfs-step button').forEach(function (button) {
         button.addEventListener('click', function () { step(parseInt(button.dataset.dir, 10)); });
     });
+    var screenBtn = root.querySelector('.gfs-screen');
+    function setScreen(full) {
+        root.classList.toggle('is-full', full);
+        screenBtn.textContent = full ? 'POWRÓT' : 'PEŁNY EKRAN';
+        screenBtn.title = full ? 'Wróć do widoku panelu' : 'Rozciągnij mapy na cały ekran';
+        window.requestAnimationFrame(function () {
+            for (var i = 0; i < state.layout; i++) place(i);
+        });
+    }
+    screenBtn.addEventListener('click', function () {
+        setScreen(!root.classList.contains('is-full'));
+    });
     $(document).off('keydown.gfs').on('keydown.gfs', function (event) {
         if (!document.getElementById('gfs-app')) return;
         var tag = event.target && event.target.tagName;
         if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if (event.key === 'Escape' && root.classList.contains('is-full')) setScreen(false);
         if (event.key === 'ArrowRight') step(1);
         if (event.key === 'ArrowLeft') step(-1);
     });
@@ -317,4 +446,5 @@ function initGfsMap() {
 
     renderPanes();
     renderClock();
+    armLive();
 }

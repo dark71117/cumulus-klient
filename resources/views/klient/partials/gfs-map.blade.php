@@ -51,6 +51,7 @@
             <button type="button" data-dir="-1" title="Poprzednia godzina">&lt;&lt;</button>
             <button type="button" data-dir="1" title="Następna godzina">&gt;&gt;</button>
         </div>
+        <button type="button" class="gfs-screen" title="Rozciągnij mapy na cały ekran">PEŁNY EKRAN</button>
         <div class="gfs-status">
             <div>STATUS meteomax.pl</div>
             <div class="gfs-status-line">GFS: —</div>

@@ -51,7 +51,8 @@ class GfsMapTest extends TestCase
             ->assertSee('Cztery mapy', false)
             ->assertSee('2026.11.10.06', false)
             ->assertSee('>Polska<', false)
-            ->assertSee('>Europa<', false);
+            ->assertSee('>Europa<', false)
+            ->assertSee('PEŁNY EKRAN', false);
     }
 
     public function test_image_and_frames_follow_run_region_and_fallback_file(): void
@@ -91,6 +92,34 @@ class GfsMapTest extends TestCase
         $this->assertNull($service->imagePath('2026.11.10.06', 'Polska', 'nieMaTakiej', '001'));
         $this->assertNull($service->frames('2026.11.10.06', 'Polska', '..'));
         $this->assertNull($service->imagePath('2026.11.10.06', 'Polska', 'synop3', '../01'));
+    }
+
+    public function test_frames_carry_file_time_and_runs_for_the_live_menu(): void
+    {
+        touch($this->maps.'/2026.11.10.06/Polska/synop3.001.png', 1700000000);
+        touch($this->maps.'/2026.11.10.06/Polska/synop3.024.png', 1700001111);
+        copy(
+            $this->maps.'/2026.11.10.06/Polska/precip6h.006.png',
+            $this->maps.'/2026.11.10.06/Polska/precip6h_2.006.png'
+        );
+        touch($this->maps.'/2026.11.10.06/Polska/precip6h.006.png', 1700000000);
+        touch($this->maps.'/2026.11.10.06/Polska/precip6h_2.006.png', 1700003333);
+        $client = $this->makeClient();
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $frames = $this->getJson('/klient/gfs/klatki/2026.11.10.06/Polska/synop3')
+            ->assertOk()
+            ->json();
+
+        $this->assertSame(1700000000, $frames['stamps']['001']);
+        $this->assertSame(1700001111, $frames['stamps']['024']);
+        $this->assertSame(['2026.11.10.06', '2026.11.09.18'], $frames['runs']);
+
+        $precip = $this->getJson('/klient/gfs/klatki/2026.11.10.06/Polska/precip6h')
+            ->assertOk()
+            ->json();
+        $this->assertSame(1700003333, $precip['stamps']['006']);
     }
 
     private function deleteTree(string $dir): void

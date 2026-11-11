@@ -44,12 +44,15 @@ class GfsMapService
         if (! $this->validRun($run) || ! GfsMapCatalog::isRegion($region) || GfsMapCatalog::filesFor($product) === []) {
             return null;
         }
-        $hours = $this->hours($run, $region, $product);
+        $stamps = $this->stamps($run, $region, $product);
+        $hours = array_keys($stamps);
 
         return [
             'hours' => $hours,
             'days' => $this->timeline($run, $hours),
             'count' => count($hours),
+            'stamps' => (object) $stamps,
+            'runs' => $this->runs(),
         ];
     }
 
@@ -82,6 +85,11 @@ class GfsMapService
 
     public function hours(string $run, string $region, string $product): array
     {
+        return array_keys($this->stamps($run, $region, $product));
+    }
+
+    public function stamps(string $run, string $region, string $product): array
+    {
         $dir = $this->regionDir($run, $region);
         $prefixes = GfsMapCatalog::filesFor($product);
         if ($dir === null || $prefixes === []) {
@@ -93,14 +101,22 @@ class GfsMapService
             if (! preg_match('/^([A-Za-z0-9_]+)\.(\d{3})\.png$/', $file, $match)) {
                 continue;
             }
-            if (isset($wanted[$match[1]])) {
-                $found[$match[2]] = true;
+            if (! isset($wanted[$match[1]])) {
+                continue;
+            }
+            $path = $dir.DIRECTORY_SEPARATOR.$file;
+            clearstatcache(true, $path);
+            $mtime = filemtime($path);
+            if ($mtime === false) {
+                continue;
+            }
+            if (! isset($found[$match[2]]) || $mtime > $found[$match[2]]) {
+                $found[$match[2]] = $mtime;
             }
         }
-        $hours = array_keys($found);
-        sort($hours);
+        ksort($found);
 
-        return $hours;
+        return $found;
     }
 
     public function timeline(string $run, array $hours): array

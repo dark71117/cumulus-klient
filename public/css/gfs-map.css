@@ -169,6 +169,12 @@
     background: #d5e2ee;
     cursor: pointer;
 }
+.gfs-hours button.is-fresh:not(.is-on),
+.gfs-days button.is-fresh:not(.is-on) {
+    background: #9ed99a;
+    border-color: #2f7d32;
+    font-weight: 700;
+}
 .gfs-hours button:disabled, .gfs-days button:disabled {
     background: #eee;
     color: #aaa;
@@ -176,8 +182,24 @@
 }
 .gfs-step { display: flex; justify-content: center; gap: 8px; }
 .gfs-step button { background: #ffe14a; border-color: #c6a400; min-width: 28px; font-weight: 700; }
-.gfs-status {
+.gfs-screen {
     margin-top: auto;
+    width: 100%;
+    font: inherit;
+    font-weight: 700;
+    padding: 5px 2px;
+    cursor: pointer;
+    border: 1px solid #8a6a00;
+    background: #ffe14a;
+}
+.gfs-app.is-full {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    width: 100vw;
+    height: 100vh;
+}
+.gfs-status {
     background: #1d4e89;
     color: #fff;
     padding: 6px;
