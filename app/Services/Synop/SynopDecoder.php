@@ -3,7 +3,9 @@
 namespace App\Services\Synop;
 
 use App\Support\Synop\WmoWeather;
-use Carbon\CarbonInterface;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 
 class SynopDecoder
 {
@@ -12,7 +14,7 @@ class SynopDecoder
     /**
      * @return array<string, mixed>|null
      */
-    public function decode(string $raw, ?CarbonInterface $observedAtUtc = null, int $windUnit = 1): ?array
+    public function decode(string $raw, ?DateTimeInterface $observedAtUtc = null, int $windUnit = 1): ?array
     {
         $groups = $this->groups($raw);
         if ($groups === [] || ! preg_match('/^\d{5}$/', $groups[0])) {
@@ -58,7 +60,12 @@ class SynopDecoder
         $tempOdcz = WmoWeather::windChill($temp, $speedMs > 0 ? $speedMs * 3.6 : 0);
         $weatherMeta = WmoWeather::describe($weather, $wxInd);
         $humidity = $this->humidity($temp, $dew);
-        $termin = $observedAtUtc?->copy()->timezone(config('app.timezone'))->startOfHour();
+        $tzName = function_exists('config') ? (string) config('app.timezone', 'Europe/Warsaw') : 'Europe/Warsaw';
+        $termin = null;
+        if ($observedAtUtc !== null) {
+            $local = DateTimeImmutable::createFromInterface($observedAtUtc)->setTimezone(new DateTimeZone($tzName));
+            $termin = $local->setTime((int) $local->format('G'), 0, 0);
+        }
 
         $windDisplay = $windTxt;
         if ($speedMs > 0 && $windTxt !== 'cisza' && $windTxt !== 'zmienny') {
