@@ -39,13 +39,14 @@ class GfsMapService
         return $runs;
     }
 
-    public function frames(string $run, string $region, string $product): ?array
+    public function frames(string $run, string $region, string $product, string $tab = ''): ?array
     {
         if (! $this->validRun($run) || ! GfsMapCatalog::isRegion($region) || GfsMapCatalog::filesFor($product) === []) {
             return null;
         }
         $stamps = $this->stamps($run, $region, $product);
         $hours = array_keys($stamps);
+        $coverage = $this->coverage($run, $region, $product, $tab);
 
         return [
             'hours' => $hours,
@@ -53,6 +54,11 @@ class GfsMapService
             'count' => count($hours),
             'stamps' => (object) $stamps,
             'runs' => $this->runs(),
+            'coverage' => [
+                'total' => $coverage['total'],
+                'hours' => (object) $coverage['hours'],
+                'dates' => (object) $coverage['dates'],
+            ],
         ];
     }
 
@@ -117,6 +123,57 @@ class GfsMapService
         ksort($found);
 
         return $found;
+    }
+
+    public function coverage(string $run, string $region, string $product, string $tab = ''): array
+    {
+        $tabId = GfsMapCatalog::productsForTab($tab) !== [] ? $tab : (GfsMapCatalog::tabIdFor($product) ?? '');
+        $products = GfsMapCatalog::productsForTab($tabId);
+        $prefixToProduct = [];
+        foreach ($products as $item) {
+            foreach ($item['files'] as $prefix) {
+                $prefixToProduct[$prefix] = $item['id'];
+            }
+        }
+        $byHour = [];
+        $dir = $this->regionDir($run, $region);
+        if ($dir !== null) {
+            foreach (scandir($dir) ?: [] as $file) {
+                if (! preg_match('/^([A-Za-z0-9_]+)\.(\d{3})\.png$/', $file, $match)) {
+                    continue;
+                }
+                $id = $prefixToProduct[$match[1]] ?? null;
+                if ($id === null) {
+                    continue;
+                }
+                $byHour[$match[2]][$id] = true;
+            }
+        }
+        $hourCounts = [];
+        foreach ($byHour as $lead => $ids) {
+            $hourCounts[$lead] = count($ids);
+        }
+        ksort($hourCounts);
+        $start = DateTimeImmutable::createFromFormat('!Y.m.d.H', $run, new DateTimeZone('UTC'));
+        $byDate = [];
+        if ($start !== false) {
+            foreach ($byHour as $lead => $ids) {
+                $key = $start->modify('+'.((int) $lead).' hours')->format('d.m.Y');
+                foreach (array_keys($ids) as $id) {
+                    $byDate[$key][$id] = true;
+                }
+            }
+        }
+        $dateCounts = [];
+        foreach ($byDate as $date => $ids) {
+            $dateCounts[$date] = count($ids);
+        }
+
+        return [
+            'total' => count($products),
+            'hours' => $hourCounts,
+            'dates' => $dateCounts,
+        ];
     }
 
     public function timeline(string $run, array $hours): array

@@ -33,6 +33,40 @@ class GfsMapCatalog
         return [];
     }
 
+    public static function tabIdFor(string $product): ?string
+    {
+        foreach (self::tabs() as $tab) {
+            foreach ($tab['groups'] as $group) {
+                foreach ($group['items'] as $item) {
+                    if ($item['id'] === $product) {
+                        return $tab['id'];
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static function productsForTab(string $tabId): array
+    {
+        foreach (self::tabs() as $tab) {
+            if ($tab['id'] !== $tabId) {
+                continue;
+            }
+            $items = [];
+            foreach ($tab['groups'] as $group) {
+                foreach ($group['items'] as $item) {
+                    $items[$item['id']] = $item;
+                }
+            }
+
+            return array_values($items);
+        }
+
+        return [];
+    }
+
     public static function tabs(): array
     {
         return [

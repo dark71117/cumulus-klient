@@ -17,6 +17,7 @@ function initGfsMap() {
             days: (boot.frames && boot.frames.days) || [],
             count: (boot.frames && boot.frames.count) || 0,
             stamps: stampsOf(boot.frames && boot.frames.stamps),
+            coverage: coverageOf(boot.frames && boot.frames.coverage),
             fresh: {},
             zoom: 0,
             panX: 0,
@@ -48,6 +49,7 @@ function initGfsMap() {
             copy.panX = 0;
             copy.panY = 0;
             copy.stamps = null;
+            copy.coverage = coverageOf(null);
             copy.fresh = {};
             state.panes.push(copy);
         }
@@ -128,7 +130,15 @@ function initGfsMap() {
         var url = imageUrl(index);
         if (img.dataset.url !== url) {
             img.dataset.url = url;
-            img.onload = function () { place(index); };
+            img.onload = function () {
+                if (img.dataset.url !== url) return;
+                missing.hidden = true;
+                place(index);
+            };
+            img.onerror = function () {
+                if (img.dataset.url !== url) return;
+                missing.hidden = false;
+            };
             img.src = url;
         } else {
             place(index);
@@ -159,6 +169,80 @@ function initGfsMap() {
     function stampsOf(raw) {
         if (!raw || Array.isArray(raw)) return {};
         return raw;
+    }
+
+    function coverageOf(raw) {
+        raw = raw || {};
+        return {
+            total: raw.total || 0,
+            hours: stampsOf(raw.hours),
+            dates: stampsOf(raw.dates)
+        };
+    }
+
+    function coverageKey(item) {
+        var cov = item.coverage || coverageOf(null);
+        var hours = cov.hours || {};
+        var dates = cov.dates || {};
+        var hourPart = Object.keys(hours).sort().map(function (key) { return key + ':' + hours[key]; }).join(',');
+        var datePart = Object.keys(dates).sort().map(function (key) { return key + ':' + dates[key]; }).join(',');
+        return cov.total + '|' + hourPart + '|' + datePart;
+    }
+
+    function clockSignature() {
+        var item = active();
+        var freshKeys = Object.keys(item.fresh || {}).sort();
+        return state.lead + '|' + (item.hours || []).join(',') + '|' + freshKeys.join(',') + '|' + coverageKey(item);
+    }
+
+    function currentTab() {
+        var button = root.querySelector('.gfs-rail-btn.is-on');
+        return button ? button.dataset.tab : 'synoptyk';
+    }
+
+    function describeMaps(count, fresh) {
+        var total = active().coverage && active().coverage.total;
+        var parts = [];
+        if (total && count) parts.push(count + ' z ' + total + ' map' + (count >= total ? ', komplet' : ''));
+        if (fresh) parts.push('nowa mapa');
+        return parts.join(' — ');
+    }
+
+    function dayCount(day) {
+        var hours = active().coverage && active().coverage.hours;
+        if (!hours || !day.clocks.length) return 0;
+        var least = 0;
+        day.clocks.forEach(function (item) {
+            var count = hours[item.lead] || 0;
+            if (!least || count < least) least = count;
+        });
+        return least;
+    }
+
+    function fillState(count) {
+        var total = active().coverage && active().coverage.total;
+        if (!total || !count) return '';
+        return count >= total ? 'complete' : 'partial';
+    }
+
+    function dayFillState(day) {
+        var hours = active().coverage && active().coverage.hours;
+        if (!hours || !day.clocks.length) return '';
+        var states = day.clocks.map(function (item) { return fillState(hours[item.lead] || 0); });
+        if (states.every(function (stateName) { return stateName === 'complete'; })) return 'complete';
+        if (states.some(function (stateName) { return stateName === 'partial' || stateName === 'complete'; })) return 'partial';
+        return '';
+    }
+
+    function markFill(button, stateName) {
+        if (stateName === 'complete') button.classList.add('is-complete');
+        else if (stateName === 'partial') button.classList.add('is-partial');
+    }
+
+    function setTip(button, text) {
+        if (!text) return;
+        button.title = text;
+        button.setAttribute('data-tip', text);
     }
 
     function utcNow() {
@@ -248,6 +332,7 @@ function initGfsMap() {
             });
         }
         item.stamps = stamps;
+        item.coverage = coverageOf(data.coverage);
         if (index === state.active) {
             if (keepLead && item.hours.indexOf(state.lead) === -1) {
                 state.lead = nearest(item.hours, state.lead);
@@ -255,8 +340,7 @@ function initGfsMap() {
             if (!keepLead) state.lead = item.hours[0] || '';
             if (item.fresh[state.lead]) delete item.fresh[state.lead];
             syncRuns(data.runs);
-            var nextKey = state.lead + '|' + item.hours.join(',') + '|' + Object.keys(item.fresh).sort().join(',');
-            if (nextKey !== item.clockKey) renderClock();
+            if (clockSignature() !== item.clockKey) renderClock();
         }
         paint(index);
     }
@@ -270,7 +354,7 @@ function initGfsMap() {
         var baseline = live ? Object.assign({}, item.stamps || {}) : null;
         item.req = (item.req || 0) + 1;
         var req = item.req;
-        $.getJSON(boot.framesBase + '/' + state.run + '/' + item.region + '/' + item.product)
+        $.getJSON(boot.framesBase + '/' + state.run + '/' + item.region + '/' + item.product + '?tab=' + encodeURIComponent(currentTab()))
             .done(function (data) {
                 if (!root.isConnected || item.req !== req) return;
                 applyFrames(index, data, keepLead, baseline);
@@ -316,12 +400,12 @@ function initGfsMap() {
             var button = document.createElement('button');
             button.type = 'button';
             button.textContent = day.label;
-            button.title = day.date;
             var dayFresh = day.clocks.some(function (item) { return active().fresh && active().fresh[item.lead]; });
-            if (dayFresh) {
-                button.classList.add('is-fresh');
-                button.title = day.date + ' — nowa mapa';
-            }
+            var dateCount = dayCount(day);
+            var dayTip = [day.date, describeMaps(dateCount, dayFresh)].filter(Boolean).join(' — ');
+            setTip(button, dayTip);
+            markFill(button, dayFillState(day));
+            if (dayFresh) button.classList.add('is-fresh');
             if (current && current.day.date === day.date) button.classList.add('is-on');
             button.addEventListener('click', function () { pickDay(day); });
             daysBox.appendChild(button);
@@ -337,10 +421,11 @@ function initGfsMap() {
             button.textContent = label;
             var lead = clocks[label];
             if (!lead) button.disabled = true;
-            if (lead && active().fresh && active().fresh[lead]) {
-                button.classList.add('is-fresh');
-                button.title = 'Nowa mapa';
-            }
+            var hourFresh = !!(lead && active().fresh && active().fresh[lead]);
+            var hourCount = lead && active().coverage ? active().coverage.hours[lead] : 0;
+            setTip(button, describeMaps(hourCount, hourFresh));
+            markFill(button, fillState(hourCount));
+            if (hourFresh) button.classList.add('is-fresh');
             if (current && current.clock === label) button.classList.add('is-on');
             button.addEventListener('click', function (event) {
                 var key = event.currentTarget.textContent;
@@ -353,8 +438,7 @@ function initGfsMap() {
         root.querySelector('.gfs-stan').textContent = 'Stan: ' + (active().count || 0);
         var status = root.querySelector('.gfs-status-line');
         status.textContent = active().count ? ('GFS: ' + state.run) : 'GFS: brak map';
-        var freshKeys = Object.keys(active().fresh || {}).sort();
-        active().clockKey = state.lead + '|' + (active().hours || []).join(',') + '|' + freshKeys.join(',');
+        active().clockKey = clockSignature();
     }
 
     function pickDay(day) {

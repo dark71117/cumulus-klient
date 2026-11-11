@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Panel\GfsMapService;
 use App\Support\GfsMapCatalog;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class GfsMapController extends Controller
@@ -34,9 +35,10 @@ class GfsMapController extends Controller
         ])->render();
     }
 
-    public function frames(string $run, string $region, string $product): JsonResponse
+    public function frames(Request $request, string $run, string $region, string $product): JsonResponse
     {
-        $frames = $this->maps->frames($run, $region, $product);
+        $tab = (string) $request->query('tab', '');
+        $frames = $this->maps->frames($run, $region, $product, $tab);
         abort_if($frames === null, 404);
 
         return response()->json($frames);

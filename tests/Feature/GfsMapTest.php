@@ -83,6 +83,12 @@ class GfsMapTest extends TestCase
         $this->assertSame('ŚR', $frames['days'][1]['label']);
         $this->assertSame('11.11.2026', $frames['days'][1]['date']);
         $this->assertSame('06', $frames['days'][1]['clocks'][0]['clock']);
+        $this->assertSame(count(\App\Support\GfsMapCatalog::productsForTab('synoptyk')), $frames['coverage']['total']);
+        $this->assertSame(1, $frames['coverage']['hours']['001']);
+        $this->assertSame(1, $frames['coverage']['hours']['006']);
+        $this->assertSame(1, $frames['coverage']['hours']['024']);
+        $this->assertSame(2, $frames['coverage']['dates']['10.11.2026']);
+        $this->assertSame(1, $frames['coverage']['dates']['11.11.2026']);
     }
 
     public function test_newest_run_is_first_and_unknown_product_is_rejected(): void

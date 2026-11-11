@@ -169,10 +169,18 @@
     background: #d5e2ee;
     cursor: pointer;
 }
-.gfs-hours button.is-fresh:not(.is-on),
-.gfs-days button.is-fresh:not(.is-on) {
+.gfs-hours button.is-fresh:not(.is-on):not(.is-complete),
+.gfs-days button.is-fresh:not(.is-on):not(.is-complete),
+.gfs-hours button.is-partial:not(.is-on),
+.gfs-days button.is-partial:not(.is-on) {
     background: #9ed99a;
     border-color: #2f7d32;
+    font-weight: 700;
+}
+.gfs-hours button.is-complete:not(.is-on),
+.gfs-days button.is-complete:not(.is-on) {
+    background: #7eb6ea;
+    border-color: #1d4e89;
     font-weight: 700;
 }
 .gfs-hours button:disabled, .gfs-days button:disabled {
