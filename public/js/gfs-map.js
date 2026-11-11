@@ -7,6 +7,7 @@ function initGfsMap() {
     var state = {
         run: boot.run || '',
         lead: boot.lead || '',
+        startup: true,
         layout: 1,
         active: 0,
         panes: [{
@@ -184,6 +185,17 @@ function initGfsMap() {
         return current.clock === edge;
     }
 
+    function newestRun() {
+        for (var i = 0; i < runSelect.options.length; i++) {
+            if (/^\d{4}\.\d{2}\.\d{2}\.\d{2}$/.test(runSelect.options[i].value)) return runSelect.options[i].value;
+        }
+        return '';
+    }
+
+    function followLive() {
+        return watchingNow() || (state.startup && state.run === newestRun());
+    }
+
     var liveTimer = null;
     var liveGen = 0;
 
@@ -191,11 +203,11 @@ function initGfsMap() {
         liveGen += 1;
         if (liveTimer) clearTimeout(liveTimer);
         liveTimer = null;
-        if (!watchingNow() || !root.isConnected) return;
+        if (!followLive() || !root.isConnected) return;
         var gen = liveGen;
         liveTimer = setTimeout(function () {
             liveTimer = null;
-            if (gen !== liveGen || !root.isConnected || !watchingNow()) return;
+            if (gen !== liveGen || !root.isConnected || !followLive()) return;
             var left = state.layout;
             for (var i = 0; i < state.layout; i++) {
                 loadFrames(i, true, true, function () {
@@ -351,6 +363,7 @@ function initGfsMap() {
     }
 
     function setLead(lead) {
+        state.startup = false;
         state.lead = lead;
         var item = active();
         if (item.fresh) delete item.fresh[lead];
@@ -404,6 +417,7 @@ function initGfsMap() {
         });
     });
     runSelect.addEventListener('change', function () {
+        state.startup = false;
         state.run = runSelect.value;
         for (var i = 0; i < state.layout; i++) loadFrames(i, true);
     });

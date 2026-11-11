@@ -86,7 +86,7 @@
 <script src="{{ asset('js/imgw-table-hour.js') }}?v=4"></script>
 <script src="{{ asset('js/imgw-table.js') }}?v=7"></script>
 <script src="{{ asset('js/analiza.js') }}?v=4"></script>
-<script src="{{ asset('js/gfs-map.js') }}?v=3"></script>
+<script src="{{ asset('js/gfs-map.js') }}?v=4"></script>
 <script src="{{ asset('js/client.js') }}?v=19"></script>
 </body>
 </html>
