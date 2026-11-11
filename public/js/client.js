@@ -18,7 +18,7 @@ $(document).ready(function () {
         var m = new Date().getMinutes();
         if ([3, 13, 23, 33, 43, 53].indexOf(m) !== -1) {
             autoLoading = 1;
-            if (['imgwTab', 'imgwTableNewTab', 'imgwTableNew2Tab', 'analizaTab', 'imgwMapTab', 'imgwMapNewTab', 'imgwMapNew2Tab', 'gddkiaRegionTab', 'gddkiaRoadTab', 'warningTab'].indexOf(menuPosition) !== -1) {
+            if (['imgwTableNew2Tab', 'analizaTab', 'imgwMapNew2Tab', 'gddkiaRegionTab', 'gddkiaRoadTab', 'warningTab'].indexOf(menuPosition) !== -1) {
                 loadContent(menuPosition);
             }
         }
@@ -162,7 +162,7 @@ function clearNavActive() {
 function setActualTabs() {
     $.ajax({ cache: false, type: 'POST', url: klientUrl('/actualtabs'), dataType: 'json',
         success: function (tabs) {
-            ['imgwTab', 'imgwTableNewTab', 'imgwTableNew2Tab', 'analizaTab', 'imgwMapTab', 'imgwMapNewTab', 'imgwMapNew2Tab', 'gddkiaRegionTab', 'gddkiaRoadTab'].forEach(function (key) {
+            ['imgwTableNew2Tab', 'analizaTab', 'imgwMapNew2Tab', 'gddkiaRegionTab', 'gddkiaRoadTab'].forEach(function (key) {
                 if (!tabs[key]) return;
                 if (tabs[key].active === 1) {
                     $('#' + key).removeClass('hidden');
@@ -178,14 +178,10 @@ function openTableOnStart() {
     if ($('.tabs_frame').hasClass('hidden')) {
         return;
     }
-    if (!$('#imgwTableNewTab').hasClass('hidden')) {
-        $('#imgwTableNewTab').trigger('click');
-    } else if (!$('#imgwMapNewTab').hasClass('hidden')) {
-        $('#imgwMapNewTab').trigger('click');
-    } else if (!$('#imgwTab').hasClass('hidden')) {
-        $('#imgwTab').trigger('click');
-    } else if (!$('#imgwMapTab').hasClass('hidden')) {
-        $('#imgwMapTab').trigger('click');
+    if (!$('#imgwTableNew2Tab').hasClass('hidden')) {
+        $('#imgwTableNew2Tab').trigger('click');
+    } else if (!$('#imgwMapNew2Tab').hasClass('hidden')) {
+        $('#imgwMapNew2Tab').trigger('click');
     }
 }
 

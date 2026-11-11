@@ -102,19 +102,20 @@ class PanelContentTest extends TestCase
 
         $page = $this->get('/klient')->assertOk();
         $html = $page->getContent();
-        $this->assertStringContainsString('id="imgwTab"', $html);
-        $this->assertStringContainsString('>Tabela</div>', $html);
-        $this->assertStringContainsString('id="imgwTableNewTab"', $html);
-        $this->assertStringContainsString('>Tabela NEW</div>', $html);
         $this->assertStringContainsString('id="imgwTableNew2Tab"', $html);
-        $this->assertStringContainsString('>Tabela NEW2</div>', $html);
+        $this->assertStringContainsString('>Tabela</div>', $html);
         $this->assertStringContainsString('imgw-table.js', $html);
         $this->assertStringContainsString('imgw-table-hour.js', $html);
-        $this->assertStringContainsString('>Mapa</div>', $html);
-        $this->assertStringContainsString('>Mapa NEW</div>', $html);
-        $this->assertStringContainsString('id="imgwMapNewTab"', $html);
         $this->assertStringContainsString('id="imgwMapNew2Tab"', $html);
-        $this->assertStringContainsString('>Mapa NEW2</div>', $html);
+        $this->assertStringContainsString('>Mapa</div>', $html);
+        $this->assertStringNotContainsString('>Tabela NEW</div>', $html);
+        $this->assertStringNotContainsString('>Tabela NEW2</div>', $html);
+        $this->assertStringNotContainsString('>Mapa NEW</div>', $html);
+        $this->assertStringNotContainsString('>Mapa NEW2</div>', $html);
+        $this->assertStringNotContainsString('id="imgwTableNewTab"', $html);
+        $this->assertStringNotContainsString('id="imgwMapNewTab"', $html);
+        $this->assertStringNotContainsString('id="imgwTab"', $html);
+        $this->assertStringNotContainsString('id="imgwMapTab"', $html);
         $this->assertStringContainsString('id="analizaTab"', $html);
         $this->assertStringContainsString('>Analiza</div>', $html);
         $this->assertStringContainsString('analiza.js', $html);
@@ -130,14 +131,6 @@ class PanelContentTest extends TestCase
         $this->assertStringNotContainsString('Atlas chmur', $html);
         $this->assertStringNotContainsString('Teoria meteorologii', $html);
         $this->assertLessThan(
-            strpos($html, 'id="imgwMapNewTab"'),
-            strpos($html, 'id="imgwTableNewTab"')
-        );
-        $this->assertLessThan(
-            strpos($html, 'id="imgwTableNew2Tab"'),
-            strpos($html, 'id="imgwMapNewTab"')
-        );
-        $this->assertLessThan(
             strpos($html, 'id="imgwMapNew2Tab"'),
             strpos($html, 'id="imgwTableNew2Tab"')
         );
@@ -146,16 +139,8 @@ class PanelContentTest extends TestCase
             strpos($html, 'id="imgwMapNew2Tab"')
         );
         $this->assertLessThan(
-            strpos($html, 'id="imgwTab"'),
-            strpos($html, 'id="analizaTab"')
-        );
-        $this->assertLessThan(
-            strpos($html, 'id="imgwMapTab"'),
-            strpos($html, 'id="imgwTab"')
-        );
-        $this->assertLessThan(
             strpos($html, 'id="addonsTab"'),
-            strpos($html, 'id="imgwMapTab"')
+            strpos($html, 'id="analizaTab"')
         );
     }
 
@@ -166,16 +151,16 @@ class PanelContentTest extends TestCase
         CustomerContext::put($client);
 
         $tabs = app(\App\Services\Panel\MenuTabsService::class)->actualTabs();
-        $this->assertArrayHasKey('imgwTab', $tabs);
-        $this->assertArrayHasKey('imgwTableNewTab', $tabs);
-        $this->assertArrayHasKey('imgwMapTab', $tabs);
         $this->assertArrayHasKey('imgwTableNew2Tab', $tabs);
         $this->assertArrayHasKey('imgwMapNew2Tab', $tabs);
         $this->assertArrayHasKey('analizaTab', $tabs);
         $this->assertSame(1, $tabs['analizaTab']['active']);
         $this->assertArrayNotHasKey('satPhotoTab', $tabs);
-        $this->assertSame(1, $tabs['imgwTab']['active']);
-        $this->assertSame(1, $tabs['imgwTableNewTab']['active']);
+        $this->assertArrayNotHasKey('imgwTab', $tabs);
+        $this->assertArrayNotHasKey('imgwTableNewTab', $tabs);
+        $this->assertArrayNotHasKey('imgwMapTab', $tabs);
+        $this->assertArrayNotHasKey('imgwMapNewTab', $tabs);
+        $this->assertSame(1, $tabs['imgwTableNew2Tab']['active']);
     }
 
     public function test_meteomax_disabled_shows_link(): void

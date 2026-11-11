@@ -66,12 +66,8 @@ class MenuTabsService
     {
         $customer = CustomerContext::get();
         $types = [
-            'imgwTab' => 'IMGW',
-            'imgwTableNewTab' => 'IMGW',
             'imgwTableNew2Tab' => 'IMGW',
             'analizaTab' => 'IMGW',
-            'imgwMapTab' => 'mapaWarunkow',
-            'imgwMapNewTab' => 'mapaWarunkow',
             'imgwMapNew2Tab' => 'mapaWarunkow',
             'gddkiaRegionTab' => 'GDDKIAwoj',
             'gddkiaRoadTab' => 'GDDKIAdrogi',

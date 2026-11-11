@@ -48,7 +48,7 @@
         <button type="button" class="analiza-now" id="analiza-latest" data-termin="{{ $data['latest'] ?? '' }}" @disabled($latestDt === '')>Aktualne</button>
         <label class="analiza-desc-toggle">
             <input type="checkbox" id="analiza-show-desc" checked>
-            Opisy (jak Tabela NEW2)
+            Opisy (jak Tabela)
         </label>
     </div>
 

@@ -420,7 +420,7 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString("klientUrl('/maplimit')", $clientJs);
         $this->assertStringContainsString('#imgw-table-limit', $clientJs);
         $this->assertStringContainsString('loadContent(menuPosition)', $clientJs);
-        $this->assertStringContainsString("$('#imgwTableNewTab').trigger('click')", $clientJs);
+        $this->assertStringContainsString("$('#imgwTableNew2Tab').trigger('click')", $clientJs);
     }
 
     public function test_table_new_tab_renders_datatable(): void
