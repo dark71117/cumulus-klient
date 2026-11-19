@@ -6,7 +6,7 @@ class GfsMapCatalog
 {
     public const REGIONS = ['Polska', 'Europa'];
 
-    public const WEEKDAYS = ['N', 'PO', 'WT', 'ŚR', 'CZ', 'P', 'SO'];
+    public const WEEKDAYS = ['NI', 'PO', 'WT', 'ŚR', 'CZ', 'PI', 'SO'];
 
     public static function weekday(int $phpWeekday): string
     {

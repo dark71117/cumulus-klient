@@ -159,33 +159,24 @@
 .gfs-run, .gfs-layout { width: 100%; font: inherit; }
 .gfs-regions { display: flex; gap: 4px; }
 .gfs-regions button { flex: 1; font: inherit; padding: 4px 0; cursor: pointer; border: 1px solid #8a8a8a; background: #fff; }
-.gfs-days, .gfs-hours { display: flex; flex-wrap: wrap; gap: 2px; flex-shrink: 0; }
+.gfs-days, .gfs-hours { display: grid; gap: 2px; flex-shrink: 0; }
+.gfs-days { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.gfs-hours { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .gfs-days button, .gfs-hours button, .gfs-step button {
     font: inherit;
-    min-width: 22px;
+    box-sizing: border-box;
+    min-width: 0;
     height: 20px;
-    padding: 0 2px;
+    padding: 0;
     border: 1px solid #7f93a8;
     background: #d5e2ee;
     cursor: pointer;
 }
 .gfs-days button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: calc((100% - 6px) / 4);
-    flex: 0 0 calc((100% - 6px) / 4);
-    height: auto;
-    min-width: 0;
-    min-height: 26px;
-    line-height: 1.05;
-    padding: 2px 0 1px;
-}
-.gfs-day-date {
-    font-size: 9px;
-    font-weight: 400;
-    line-height: 1;
+    height: 22px;
+    padding: 0;
+    font-size: 10px;
+    font-weight: 700;
 }
 .gfs-hours button.is-fresh:not(.is-on):not(.is-complete),
 .gfs-days button.is-fresh:not(.is-on):not(.is-complete),
@@ -201,17 +192,11 @@
     border-color: #1d4e89;
     font-weight: 700;
 }
-.gfs-hours button.is-range,
-.gfs-hours button.is-exact {
-    box-sizing: border-box;
-    flex: 0 0 calc((100% - 6px) / 4);
-    min-width: 0;
-    height: 20px;
-    padding: 0;
-}
 .gfs-hours button:disabled, .gfs-days button:disabled {
-    background: #eee;
-    color: #aaa;
+    background: #c4c4c4;
+    color: #555;
+    border-color: #9a9a9a;
+    font-weight: 400;
     cursor: default;
 }
 .gfs-step { display: flex; justify-content: center; gap: 3px; }

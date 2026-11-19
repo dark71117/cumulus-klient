@@ -52,11 +52,6 @@ function initGfsMap() {
         return (list || []).map(asLead).filter(Boolean);
     }
 
-    function shortDate(date) {
-        var bits = String(date || '').split('.');
-        return bits.length >= 2 ? bits[0] + '-' + bits[1] : '';
-    }
-
     function ensurePanes(count) {
         while (state.panes.length < count) {
             var copy = Object.assign({}, state.panes[0]);
@@ -236,33 +231,17 @@ function initGfsMap() {
         return String(hour).padStart(2, '0');
     }
 
-    function hourGroups(clocks) {
+    function hourSlots(clocks) {
         var byClock = {};
-        clocks.forEach(function (item) { byClock[item.clock] = item.lead; });
-        var present = Object.keys(byClock).map(function (clock) { return parseInt(clock, 10); });
-        present.sort(function (a, b) { return a - b; });
-        if (present.length < 2) {
-            return present.map(function (hour) {
-                return { start: hour, end: hour, lead: byClock[pad2(hour)], span: 1 };
-            });
-        }
-        var step = 24;
-        for (var i = 1; i < present.length; i++) step = Math.min(step, present[i] - present[i - 1]);
-        if (step < 3) {
-            var singles = [];
-            for (var hour = 0; hour < 24; hour++) {
-                singles.push({ start: hour, end: hour, lead: byClock[pad2(hour)] || '', span: 1 });
-            }
-            return singles;
-        }
-        return present.map(function (hour) {
-            return { start: hour, end: hour, lead: byClock[pad2(hour)], span: 1, exact: true };
+        (clocks || []).forEach(function (item) {
+            byClock[pad2(parseInt(item.clock, 10))] = item.lead;
         });
-    }
-
-    function groupLabel(group) {
-        var hour = pad2(group.end);
-        return group.exact ? hour + ':00' : hour;
+        var slots = [];
+        for (var hour = 0; hour < 24; hour++) {
+            var clock = pad2(hour);
+            slots.push({ end: hour, lead: byClock[clock] || '' });
+        }
+        return slots;
     }
 
     function fillState(count) {
@@ -437,14 +416,7 @@ function initGfsMap() {
         (active().days || []).forEach(function (day) {
             var button = document.createElement('button');
             button.type = 'button';
-            var name = document.createElement('span');
-            name.className = 'gfs-day-name';
-            name.textContent = day.label;
-            var when = document.createElement('span');
-            when.className = 'gfs-day-date';
-            when.textContent = shortDate(day.date);
-            button.appendChild(name);
-            button.appendChild(when);
+            button.textContent = day.label;
             var dayFresh = day.clocks.some(function (item) { return active().fresh && active().fresh[item.lead]; });
             var sum = daySum(day);
             var dayText = sum ? (sum.got + ' z ' + sum.max + ' map' + (sum.got >= sum.max ? ', komplet' : '')) : '';
@@ -460,18 +432,12 @@ function initGfsMap() {
             });
             daysBox.appendChild(button);
         });
-        var groups = hourGroups(current ? current.day.clocks : []);
-        groups.forEach(function (group) {
+        hourSlots(current ? current.day.clocks : []).forEach(function (group) {
             var button = document.createElement('button');
             button.type = 'button';
-            button.textContent = groupLabel(group);
+            button.textContent = pad2(group.end);
             var lead = group.lead;
             if (!lead) button.disabled = true;
-            if (group.exact) button.classList.add('is-exact');
-            else if (group.span > 1) {
-                button.classList.add('is-range');
-                button.style.flexGrow = String(group.span);
-            }
             var hourFresh = !!(lead && active().fresh && active().fresh[lead]);
             var hourCount = lead && active().coverage ? active().coverage.hours[lead] : 0;
             setTip(button, describeMaps(hourCount, hourFresh));

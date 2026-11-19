@@ -86,6 +86,7 @@ class GfsMapTest extends TestCase
         $this->assertSame('10.11.2026', $frames['days'][0]['date']);
         $this->assertSame('07', $frames['days'][0]['clocks'][0]['clock']);
         $this->assertSame('001', $frames['days'][0]['clocks'][0]['lead']);
+        $this->assertSame(['NI', 'PO', 'WT', 'ŚR', 'CZ', 'PI', 'SO'], \App\Support\GfsMapCatalog::WEEKDAYS);
         $this->assertSame('ŚR', $frames['days'][1]['label']);
         $this->assertSame('11.11.2026', $frames['days'][1]['date']);
         $this->assertSame('06', $frames['days'][1]['clocks'][0]['clock']);
