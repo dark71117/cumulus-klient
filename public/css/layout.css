@@ -540,6 +540,7 @@ body.layout-app {
 }
 .users-icon svg { width: 16px; height: 16px; fill: currentColor; }
 .users-icon-edit { background: #0d6efd; }
+.users-icon-accounts { background: #198754; }
 .users-icon-delete { background: #dc3545; }
 .users-icon:hover { filter: brightness(1.08); }
 .users-btn {

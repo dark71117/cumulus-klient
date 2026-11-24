@@ -44,7 +44,7 @@
                     <button type="button" class="users-btn users-btn-primary" data-firm-edit="{{ json_encode($blank, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}">+ Dodaj firmę</button>
                 @endif
             </div>
-            <p class="users-note">Najpierw firma: nazwa, moduły i czy jest aktywna. Potem przycisk Konta — tam dodajesz użytkowników. Każdy dostaje własny login, hasło i najwyżej te moduły, które ma jego firma.</p>
+            <p class="users-note">Najpierw firma: nazwa, moduły i czy jest aktywna. Potem ikona kont — tam dodajesz użytkowników. Każdy dostaje własny login, hasło i najwyżej te moduły, które ma jego firma.</p>
             <div class="users-table-wrap">
                 <table class="users-table">
                     <thead>
@@ -80,7 +80,9 @@
                                 <td>{{ $firm->panel_users_count }}</td>
                                 <td><span class="users-badge {{ (int) $firm->aktywny === 1 ? 'is-on' : 'is-off' }}">{{ (int) $firm->aktywny === 1 ? 'tak' : 'nie' }}</span></td>
                                 <td class="users-actions">
-                                    <button type="button" class="users-btn users-btn-muted" data-firm-users="{{ $firm->id }}">Konta</button>
+                                    <button type="button" class="users-icon users-icon-accounts" data-firm-users="{{ $firm->id }}" title="Konta dla firmy {{ $firm->nazwa }}" data-tip="Konta dla firmy {{ $firm->nazwa }}">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zM8 11c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                                    </button>
                                     <button type="button" class="users-icon users-icon-edit" title="Edytuj {{ $firm->nazwa }}" data-tip="Edytuj {{ $firm->nazwa }}" data-firm-edit="{{ json_encode($row, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}">
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm17.71-10.21a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                     </button>

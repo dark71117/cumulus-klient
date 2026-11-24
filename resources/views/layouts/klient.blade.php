@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cumulus - serwis pogodowy</title>
     <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=8">
-    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=36">
+    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=37">
     @if(session('wind_in'))
         <link rel="stylesheet" href="{{ asset('css/wind-in.css') }}?v=1">
     @endif

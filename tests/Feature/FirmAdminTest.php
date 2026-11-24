@@ -61,7 +61,7 @@ class FirmAdminTest extends TestCase
         $this->get('/klient/firmy')
             ->assertOk()
             ->assertSee('Dodaj firmę', false)
-            ->assertSee('>Konta<', false);
+            ->assertSee('Konta dla firmy', false);
 
         $this->post('/klient/firmy', [
             'id' => 0,
