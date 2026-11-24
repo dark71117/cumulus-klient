@@ -23,6 +23,7 @@ class UserAdminController extends Controller
     public function index(Request $request): View
     {
         abort_unless(PanelAccess::canManageUsers(), 403);
+        $this->rememberFirm($request);
 
         return $this->page($request);
     }
@@ -30,6 +31,7 @@ class UserAdminController extends Controller
     public function save(Request $request): View|RedirectResponse
     {
         abort_unless(PanelAccess::canManageUsers(), 403);
+        $this->rememberFirm($request);
         $clientId = PanelAccess::managedClientId();
         abort_unless($clientId > 0, 403);
         if ($request->input('rodzaj') === 'firma') {
@@ -119,6 +121,7 @@ class UserAdminController extends Controller
     public function destroy(Request $request): View|RedirectResponse
     {
         abort_unless(PanelAccess::canManageUsers(), 403);
+        $this->rememberFirm($request);
         $user = PanelUser::query()->find((int) $request->input('id', 0));
         abort_unless($user && PanelAccess::canDelete($user), 403);
         $user->delete();
@@ -205,7 +208,7 @@ class UserAdminController extends Controller
             'users' => $users,
             'editing' => $editing,
             'levels' => PanelAccess::assignableLevels(),
-            'modules' => PanelAccess::MODULES,
+            'modules' => PanelAccess::grantedModules($client),
         ]);
     }
 
@@ -229,6 +232,13 @@ class UserAdminController extends Controller
         abort_unless($user && PanelAccess::canEdit($user), 403);
 
         return $user;
+    }
+
+    private function rememberFirm(Request $request): void
+    {
+        if ($request->filled('firma')) {
+            PanelAccess::focusCompany((int) $request->input('firma'));
+        }
     }
 
     private function modules(Request $request): array

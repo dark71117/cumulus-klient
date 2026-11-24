@@ -146,6 +146,7 @@
                                         @if(\App\Support\PanelAccess::canDelete($user))
                                             <form method="post" action="{{ url('/klient/uzytkownicy/usun') }}" data-confirm="Usunąć konto {{ $user->login }}?">
                                                 @csrf
+                                                <input type="hidden" name="firma" value="{{ $client->id }}">
                                                 <input type="hidden" name="id" value="{{ $user->id }}">
                                                 <button class="users-icon users-icon-delete" type="submit" title="Usuń {{ $user->login }}">
                                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2zM4 6h16v2H4z"/></svg>
@@ -168,6 +169,7 @@
                 </div>
                 <form method="post" action="{{ url('/klient/uzytkownicy') }}">
                     @csrf
+                    <input type="hidden" name="firma" value="{{ $client->id ?? 0 }}">
                     <input type="hidden" name="rodzaj" value="user">
                     <input type="hidden" name="id" value="0">
                     <div class="users-modal-body">
@@ -195,12 +197,14 @@
                                 </select>
                             </label>
                         </div>
-                        <div class="users-modules">
-                            @foreach($modules as $key => $label)
+                        <div class="users-modules users-field-modules">
+                            @forelse($modules as $key => $label)
                                 <label class="users-check"><input type="checkbox" name="mod_{{ $key }}" value="1" checked> {{ $label }}</label>
-                            @endforeach
+                            @empty
+                                <p class="users-note">Ta firma nie ma włączonych modułów. Włącza się je w Firmach.</p>
+                            @endforelse
                         </div>
-                        <p class="users-note">Odznaczony moduł znika z lewego menu. Nie pokaże się też, gdy klient nie ma tej treści.</p>
+                        <p class="users-note users-field-modules">Użytkownik dostaje najwyżej moduły włączone dla firmy. Odznaczony moduł znika z jego menu.</p>
                     </div>
                     <div class="users-modal-foot">
                         <button class="users-btn users-btn-primary" type="submit">Zapisz użytkownika</button>

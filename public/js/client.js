@@ -73,6 +73,9 @@ $(document).ready(function () {
     $('input#ipAdmin').click(function () {
         openAdminPane(klientUrl('/ipadmin'), '#ipAdmin');
     });
+    $('input#firmsAdmin').click(function () {
+        openAdminPane(klientUrl('/firmy'), '#firmsAdmin');
+    });
     $('input#usersAdmin').click(function () {
         openAdminPane(klientUrl('/uzytkownicy'), '#usersAdmin');
     });
@@ -91,9 +94,11 @@ $(document).ready(function () {
         if (msg && !window.confirm(msg)) {
             return;
         }
-        var errorText = $(this).closest('.users-app').length
-            ? ($(this).find('[name=obecne]').length ? 'Nie udało się zapisać profilu.' : 'Nie udało się zapisać konta.')
-            : 'Nie udało się otworzyć administracji IP.';
+        var errorText = $(this).closest('.firms-app').length
+            ? 'Nie udało się zapisać firmy.'
+            : ($(this).closest('.users-app').length
+                ? ($(this).find('[name=obecne]').length ? 'Nie udało się zapisać profilu.' : 'Nie udało się zapisać konta.')
+                : 'Nie udało się otworzyć administracji IP.');
         loadAdminPane(this.action, this.method || 'POST', $(this).serialize(), errorText);
     });
     $('#content').on('click', '[data-user-edit]', function () {
@@ -102,6 +107,26 @@ $(document).ready(function () {
     $('#content').on('click', '[data-profile-open]', function () {
         $('#users-modal').addClass('is-open');
         $('#users-modal [name=login]').trigger('focus');
+    });
+    $('#content').on('click', '[data-firm-users]', function () {
+        openAdminPane(klientUrl('/uzytkownicy?firma=' + $(this).attr('data-firm-users')), '#usersAdmin');
+    });
+    $('#content').on('click', '[data-firm-edit]', function () {
+        fillFirmsModal(JSON.parse($(this).attr('data-firm-edit')));
+    });
+    $('#content').on('click', '[data-firm-close]', function () {
+        $('#firms-modal').removeClass('is-open');
+    });
+    $('#content').on('click', '#firms-modal', function (e) {
+        if (e.target === this) {
+            $(this).removeClass('is-open');
+        }
+    });
+    $('#content').on('input', '#firms-search', function () {
+        var query = $(this).val().toLowerCase();
+        $('.firms-app .users-table tbody tr').each(function () {
+            $(this).toggle($(this).text().toLowerCase().indexOf(query) !== -1);
+        });
     });
     $('#content').on('click', '[data-user-close]', function () {
         $('#users-modal').removeClass('is-open');
@@ -119,7 +144,7 @@ $(document).ready(function () {
     });
     $(document).on('keydown', function (e) {
         if (e.key === 'Escape') {
-            $('#users-modal').removeClass('is-open');
+            $('#users-modal, #firms-modal').removeClass('is-open');
         }
     });
     $('#content').on('click', '.ipadmin-pane a', function (e) {
@@ -133,7 +158,7 @@ $(document).ready(function () {
 
     $('#mainTabs > div').click(function () {
         var id = $(this).attr('id');
-        $('#ipAdmin, #usersAdmin, #myProfile').removeClass('is-active');
+        $('#ipAdmin, #firmsAdmin, #usersAdmin, #myProfile').removeClass('is-active');
         if (id === 'addonsTab') {
             $('#addonsTabs').toggleClass('is-open');
             return;
@@ -156,7 +181,7 @@ $(document).ready(function () {
     $('#addonsTabs').on('click', '.nav-btn:not(.nav-ext)', function () {
         var id = $(this).attr('id');
         stopLoadingContent();
-        $('#ipAdmin, #usersAdmin, #myProfile').removeClass('is-active');
+        $('#ipAdmin, #firmsAdmin, #usersAdmin, #myProfile').removeClass('is-active');
         $('#mainTabs > div.t1b').removeClass('t1b');
         $('#addonsTab').addClass('t1b');
         $('#addonsTabs').addClass('is-open');
@@ -317,7 +342,7 @@ function openAdminPane(url, activeId) {
     clearNavActive();
     $('#addonsTabs').removeClass('is-open');
     menuPosition = activeId;
-    $('#ipAdmin, #usersAdmin, #myProfile').removeClass('is-active');
+    $('#ipAdmin, #firmsAdmin, #usersAdmin, #myProfile').removeClass('is-active');
     $(activeId).addClass('is-active');
     loadAdminPane(url, 'GET', null, 'Nie udało się otworzyć strony.');
 }
@@ -340,10 +365,36 @@ function fillUsersModal(data) {
     });
     $modal.find('.users-field-nazwa, .users-field-level').toggleClass('is-hidden', firm);
     $modal.find('.users-field-active').removeClass('is-hidden');
+    $modal.find('.users-field-modules').toggleClass('is-hidden', firm);
     var title = firm ? 'EDYCJA KONTA WSPÓLNEGO' : (data.id ? 'EDYCJA UŻYTKOWNIKA ' + (data.login || '') : 'DODAJ UŻYTKOWNIKA');
     $('#users-modal-title').text(title);
     $modal.addClass('is-open');
     $modal.find('[name=login]').trigger('focus');
+}
+
+function fillFirmsModal(data) {
+    var $modal = $('#firms-modal');
+    if (!$modal.length || !data) {
+        return;
+    }
+    $modal.find('[name=id]').val(data.id || 0);
+    $modal.find('[name=nazwa]').val(data.nazwa || '');
+    $modal.find('[name=login]').val(data.login || '');
+    $modal.find('[name=haslo]').val('').prop('required', !data.id);
+    $modal.find('[name=aktywny]').val(String(data.aktywny) === '0' ? '0' : '1');
+    ['tabela', 'mapa', 'gfs', 'analiza', 'dodatki'].forEach(function (key) {
+        $modal.find('[name=mod_' + key + ']').prop('checked', String(data['mod_' + key]) !== '0');
+    });
+    $('#firms-modal-title').text(data.id ? 'EDYCJA FIRMY' : 'NOWA FIRMA');
+    $modal.addClass('is-open');
+    $modal.find('[name=nazwa]').trigger('focus');
+}
+
+function openFirmsModalFromPane() {
+    var $modal = $('#firms-modal');
+    if ($modal.attr('data-open') === '1' && $modal.attr('data-form')) {
+        fillFirmsModal(JSON.parse($modal.attr('data-form')));
+    }
 }
 
 function openUsersModalFromPane() {
@@ -382,6 +433,15 @@ function loadAdminPane(url, method, data, errorText) {
             contentDiv.html(html);
             setContentDivHeight();
             openUsersModalFromPane();
+            openFirmsModalFromPane();
+            var companyName = contentDiv.find('[data-company-name]').attr('data-company-name');
+            var companyId = contentDiv.find('[data-company-id]').attr('data-company-id');
+            if (companyName) {
+                $('.sidebar-exclusive .blue').text(companyName);
+                if (companyId) {
+                    $('#customers option[value="' + companyId + '"]').text(companyName);
+                }
+            }
             if ($('#users-modal.is-open [name=obecne]').length) {
                 $('#users-modal [name=login]').trigger('focus');
             }

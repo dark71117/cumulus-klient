@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AnalizaController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\FirmAdminController;
 use App\Http\Controllers\GfsMapController;
 use App\Http\Controllers\IpAdminController;
 use App\Http\Controllers\KlientController;
@@ -41,6 +42,8 @@ Route::prefix('klient')->group(function () {
         Route::get('/uzytkownicy', [UserAdminController::class, 'index'])->name('klient.users');
         Route::post('/uzytkownicy', [UserAdminController::class, 'save'])->name('klient.users.save');
         Route::post('/uzytkownicy/usun', [UserAdminController::class, 'destroy'])->name('klient.users.delete');
+        Route::get('/firmy', [FirmAdminController::class, 'index'])->name('klient.firms');
+        Route::post('/firmy', [FirmAdminController::class, 'save'])->name('klient.firms.save');
         Route::get('/profil', [UserAdminController::class, 'profile'])->name('klient.profile');
         Route::post('/profil', [UserAdminController::class, 'updateProfile'])->name('klient.profile.save');
         Route::middleware(EnsureAdmin::class)->group(function () {

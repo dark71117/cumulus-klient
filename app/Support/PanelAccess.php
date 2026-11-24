@@ -59,6 +59,7 @@ class PanelAccess
             'id' => (int) $user->id,
             'id_klient' => (int) $user->id_klient,
             'login' => (string) $user->login,
+            'nazwa' => (string) $user->nazwa,
             'poziom' => (int) $user->poziom,
         ];
         foreach (array_keys(self::MODULES) as $module) {
@@ -94,12 +95,30 @@ class PanelAccess
         if (! isset(self::MODULES[$module])) {
             return false;
         }
+        if (! self::customerHasModule($module)) {
+            return false;
+        }
         if (self::isPanelUser()) {
             return (int) (self::current()['mod_'.$module] ?? 0) === 1;
         }
-        if (CustomerContext::isAdmin()) {
-            return true;
+
+        return true;
+    }
+
+    public static function grantedModules(?Client $client): array
+    {
+        $granted = [];
+        foreach (self::MODULES as $key => $label) {
+            if (! $client || (int) ($client->{'mod_'.$key} ?? 1) === 1) {
+                $granted[$key] = $label;
+            }
         }
+
+        return $granted;
+    }
+
+    private static function customerHasModule(string $module): bool
+    {
         $customer = CustomerContext::get();
         $key = 'mod_'.$module;
         if (! array_key_exists($key, $customer)) {
@@ -151,8 +170,34 @@ class PanelAccess
         return self::actorLevel() >= self::LEVEL_ADMIN;
     }
 
+    public static function canManageCompany(): bool
+    {
+        if (CustomerContext::isAdmin()) {
+            return true;
+        }
+
+        return self::isPanelUser() && self::actorLevel() >= self::LEVEL_SUPER;
+    }
+
+    public static function focusCompany(int $id): void
+    {
+        if ($id <= 0 || ! self::canManageCompany()) {
+            return;
+        }
+        $exists = Client::query()->where('id', $id)->where('nazwa', '<>', 'admin')->exists();
+        if ($exists) {
+            session(['panel_firm_id' => $id]);
+        }
+    }
+
     public static function managedClientId(): int
     {
+        if (self::canManageCompany()) {
+            $picked = (int) session('panel_firm_id', 0);
+            if ($picked > 0 && Client::query()->where('id', $picked)->where('nazwa', '<>', 'admin')->exists()) {
+                return $picked;
+            }
+        }
         if (self::isPanelUser()) {
             return (int) (self::current()['id_klient'] ?? 0);
         }

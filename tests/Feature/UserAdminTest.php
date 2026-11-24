@@ -155,7 +155,7 @@ class UserAdminTest extends TestCase
         $fresh = $client->fresh();
         $this->assertSame('firma2', $fresh->login);
         $this->assertSame(1, (int) $fresh->poziom_konta);
-        $this->assertSame(0, (int) $fresh->mod_mapa);
+        $this->assertSame(1, (int) $fresh->mod_mapa);
         $this->assertTrue(Hash::check('nowehaslo', $fresh->haslo));
 
         $this->post('/klient/logout');
@@ -168,7 +168,7 @@ class UserAdminTest extends TestCase
             'password' => 'nowehaslo',
         ])->assertRedirect('/klient');
         $html = $this->get('/klient')->assertOk()->getContent();
-        $this->assertStringContainsString('class="t1a nav-btn hidden" id="imgwMapNew2Tab"', $html);
+        $this->assertStringContainsString('class="t1a nav-btn" id="imgwMapNew2Tab"', $html);
         $this->assertStringContainsString('class="t1a nav-btn" id="imgwTableNew2Tab"', $html);
     }
 
@@ -199,6 +199,7 @@ class UserAdminTest extends TestCase
         ]);
         $this->makePanelUser($client->id, [
             'login' => 'ania',
+            'nazwa' => 'Anna Test',
             'mod_tabela' => 1,
             'mod_mapa' => 0,
             'mod_gfs' => 0,
@@ -217,6 +218,8 @@ class UserAdminTest extends TestCase
         $this->assertStringContainsString('class="t1a nav-btn hidden" id="gfsMapTab"', $html);
         $this->assertStringContainsString('class="t1a nav-btn hidden" id="addonsTab"', $html);
         $page->assertSee('Mój profil', false);
+        $page->assertSee('Zalogowany', false);
+        $page->assertSee('Anna Test', false);
         $page->assertDontSee('id="usersAdmin"', false);
         $this->assertSame('FIRMA', CustomerContext::get()['nazwa']);
         $this->assertSame('ania', session('panel_user.login'));

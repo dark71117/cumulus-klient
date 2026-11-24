@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cumulus - serwis pogodowy</title>
     <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=8">
-    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=34">
+    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=36">
     @if(session('wind_in'))
         <link rel="stylesheet" href="{{ asset('css/wind-in.css') }}?v=1">
     @endif
@@ -24,7 +24,13 @@
     $showAdminBar = $adminBar ?? \App\Support\CustomerContext::isAdmin();
     $clientsList = $clientsList ?? [];
     $canManageUsers = \App\Support\PanelAccess::canManageUsers();
+    $canManageCompany = \App\Support\PanelAccess::canManageCompany();
     $isPanelUser = \App\Support\PanelAccess::isPanelUser();
+    $panelUser = $isPanelUser ? \App\Support\PanelAccess::current() : null;
+    $signedName = trim((string) ($panelUser['nazwa'] ?? ''));
+    $signedAs = $isPanelUser
+        ? ($signedName !== '' ? $signedName : (string) ($panelUser['login'] ?? ''))
+        : ($showAdminBar ? 'admin' : 'konto wspólne');
 @endphp
 <form id="logout" method="post" action="{{ url('/klient/logout') }}">@csrf</form>
 <div class="app-shell">
@@ -39,6 +45,10 @@
         <div class="sidebar-exclusive" title="Treści tej strony są przeznaczone wyłącznie dla wybranego klienta">
             Serwis pogodowy Biura Prognoz Cumulus, wyłączność strony dla
             <span class="blue">{{ $barCustomer['nazwa'] ?? '' }}</span>
+        </div>
+        <div class="sidebar-who">
+            <span>Zalogowany</span>
+            <strong>{{ $signedAs }}</strong>
         </div>
         <div class="sidebar-nav">
             @yield('nav')
@@ -55,6 +65,7 @@
                         @endforeach
                     </select>
                     <input type="button" class="button" id="loadPage" value="Załaduj stronę" title="Wczytaj panel wybranego klienta" data-tip="Wczytaj panel wybranego klienta">
+                    <input type="button" class="button" id="firmsAdmin" value="Firmy" title="Nazwy firm i moduły, które można nadać użytkownikom" data-tip="Nazwy firm i moduły, które można nadać użytkownikom">
                     <input type="button" class="button" id="ipAdmin" value="Administracja IP" title="Ograniczenia logowania według adresów IP" data-tip="Ograniczenia logowania według adresów IP">
                     @if($canManageUsers)
                         <input type="button" class="button" id="usersAdmin" value="Użytkownicy" title="Konta, hasła i uprawnienia do menu" data-tip="Konta, hasła i uprawnienia do menu">
@@ -63,6 +74,9 @@
             @elseif($canManageUsers)
                 <div class="admin sidebar-admin sidebar-admin-island">
                     <div class="admin-label">Konta</div>
+                    @if($canManageCompany)
+                        <input type="button" class="button" id="firmsAdmin" value="Firmy" title="Firmy, ich moduły i konta użytkowników" data-tip="Firmy, ich moduły i konta użytkowników">
+                    @endif
                     <input type="button" class="button" id="usersAdmin" value="Użytkownicy" title="Konta, hasła i uprawnienia do menu" data-tip="Konta, hasła i uprawnienia do menu">
                 </div>
             @endif
@@ -106,6 +120,6 @@
 <script src="{{ asset('js/imgw-table.js') }}?v=7"></script>
 <script src="{{ asset('js/analiza.js') }}?v=4"></script>
 <script src="{{ asset('js/gfs-map.js') }}?v=13"></script>
-    <script src="{{ asset('js/client.js') }}?v=26"></script>
+    <script src="{{ asset('js/client.js') }}?v=28"></script>
 </body>
 </html>

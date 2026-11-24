@@ -187,7 +187,8 @@ class LoginService
         PanelUser::ensureTable();
         $user = PanelUser::query()->find((int) ($current['id'] ?? 0));
         $clientId = (int) (auth()->id() ?? 0);
-        if (! $user || ! $user->isActive() || (int) $user->id_klient !== $clientId) {
+        $client = $user ? Client::query()->find((int) $user->id_klient) : null;
+        if (! $user || ! $user->isActive() || ! $client || ! $client->isActive() || (int) $user->id_klient !== $clientId) {
             $this->logout($request);
 
             return false;

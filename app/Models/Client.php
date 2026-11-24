@@ -53,6 +53,11 @@ class Client extends Authenticatable
         return $this->hasMany(IpRange::class, 'id_klient');
     }
 
+    public function panelUsers(): HasMany
+    {
+        return $this->hasMany(PanelUser::class, 'id_klient');
+    }
+
     public static function findActiveByLogin(string $login): ?self
     {
         return static::query()->where('login', $login)->where('aktywny', 1)->first();
