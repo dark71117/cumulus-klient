@@ -53,7 +53,7 @@ class UserAccountService
     {
         Client::ensureAccountColumns();
         $client->login = $data['login'];
-        $client->poziom_konta = (int) $data['poziom'];
+        $client->poziom_konta = PanelAccess::LEVEL_USER;
         foreach (array_keys(PanelAccess::MODULES) as $module) {
             $client->{'mod_'.$module} = ! empty($data['modules'][$module]) ? 1 : 0;
         }

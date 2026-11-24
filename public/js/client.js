@@ -328,13 +328,13 @@ function fillUsersModal(data) {
     $modal.find('[name=id]').val(data.id || 0);
     $modal.find('[name=login]').val(data.login || '');
     $modal.find('[name=nazwa]').val(data.nazwa || '');
-    $modal.find('[name=poziom]').val(String(data.poziom || 1));
+    $modal.find('[name=poziom]').val(firm ? '1' : String(data.poziom || 1));
     $modal.find('[name=haslo]').val('').prop('required', !firm && !data.id);
     $modal.find('[name=aktywny]').prop('checked', String(data.aktywny) !== '0');
     ['tabela', 'mapa', 'gfs', 'analiza', 'dodatki'].forEach(function (key) {
         $modal.find('[name=mod_' + key + ']').prop('checked', String(data['mod_' + key]) === '1');
     });
-    $modal.find('.users-field-nazwa, .users-field-active').toggleClass('is-hidden', firm);
+    $modal.find('.users-field-nazwa, .users-field-active, .users-field-level').toggleClass('is-hidden', firm);
     var title = firm ? 'EDYCJA KONTA WSPÓLNEGO' : (data.id ? 'EDYCJA UŻYTKOWNIKA ' + (data.login || '') : 'DODAJ UŻYTKOWNIKA');
     $('#users-modal-title').text(title);
     $modal.addClass('is-open');

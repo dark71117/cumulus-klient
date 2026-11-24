@@ -19,7 +19,7 @@
             'id' => (int) $client->id,
             'login' => (string) $client->login,
             'nazwa' => (string) $client->nazwa,
-            'poziom' => (int) ($client->poziom_konta ?? 1),
+            'poziom' => \App\Support\PanelAccess::LEVEL_USER,
             'aktywny' => 1,
             'mod_tabela' => (int) ($client->mod_tabela ?? 1),
             'mod_mapa' => (int) ($client->mod_mapa ?? 1),
@@ -86,7 +86,7 @@
                     </div>
                     <button type="button" class="users-btn users-btn-primary" data-user-edit="{{ json_encode($blank, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}">+ Dodaj użytkownika</button>
                 </div>
-                <p class="users-note">Konto wspólne to dotychczasowy login firmy. Domyślnie jest zwykłym użytkownikiem, więc samo hasło firmowe nie daje już zarządzania kontami. Edycja — także własnego konta — otwiera się w oknie.</p>
+                <p class="users-note">Konto wspólne jest zawsze zwykłym użytkownikiem. Hasło firmy nie zarządza kontami i nie da się tego podnieść. Gdy firma ma już swojego administratora, stary login panelu też nie zakłada nowych kont.</p>
                 <div class="users-table-wrap">
                     <table class="users-table">
                         <thead>
@@ -178,7 +178,7 @@
                             <label class="users-field-nazwa">Nazwa
                                 <input name="nazwa" autocomplete="off">
                             </label>
-                            <label>Poziom
+                            <label class="users-field-level">Poziom
                                 <select name="poziom">
                                     @foreach($levels as $level => $label)
                                         <option value="{{ $level }}">{{ $level }} — {{ $label }}</option>

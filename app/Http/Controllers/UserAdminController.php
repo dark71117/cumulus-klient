@@ -104,7 +104,7 @@ class UserAdminController extends Controller
 
         $this->accounts->saveFirm($client, [
             'login' => $request->input('login'),
-            'poziom' => (int) $request->input('poziom'),
+            'poziom' => PanelAccess::LEVEL_USER,
             'haslo' => (string) $request->input('haslo', ''),
             'modules' => $this->modules($request),
         ]);
@@ -184,6 +184,10 @@ class UserAdminController extends Controller
         PanelUser::ensureTable();
         $clientId = PanelAccess::managedClientId();
         $client = $clientId > 0 ? Client::query()->find($clientId) : null;
+        if ($client && (int) ($client->poziom_konta ?? PanelAccess::LEVEL_USER) !== PanelAccess::LEVEL_USER) {
+            $client->poziom_konta = PanelAccess::LEVEL_USER;
+            $client->save();
+        }
         if ($editing === null && $client && $request->filled('edycja')) {
             $editing = $this->findEditable((int) $request->query('edycja'));
         }

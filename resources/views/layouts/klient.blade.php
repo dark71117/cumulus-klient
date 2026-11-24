@@ -106,6 +106,6 @@
 <script src="{{ asset('js/imgw-table.js') }}?v=7"></script>
 <script src="{{ asset('js/analiza.js') }}?v=4"></script>
 <script src="{{ asset('js/gfs-map.js') }}?v=13"></script>
-<script src="{{ asset('js/client.js') }}?v=22"></script>
+    <script src="{{ asset('js/client.js') }}?v=23"></script>
 </body>
 </html>

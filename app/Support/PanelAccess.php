@@ -125,11 +125,25 @@ class PanelAccess
         if (! $user instanceof Client) {
             return 0;
         }
-        if ($user->nazwa === 'admin') {
+        if ($user->nazwa === 'admin' && ! self::clientHasActiveManager(self::managedClientId())) {
             return self::LEVEL_SUPER;
         }
 
-        return (int) ($user->poziom_konta ?? self::LEVEL_USER);
+        return self::LEVEL_USER;
+    }
+
+    public static function clientHasActiveManager(int $clientId): bool
+    {
+        if ($clientId <= 0) {
+            return false;
+        }
+        PanelUser::ensureTable();
+
+        return PanelUser::query()
+            ->where('id_klient', $clientId)
+            ->where('aktywny', 1)
+            ->where('poziom', '>=', self::LEVEL_ADMIN)
+            ->exists();
     }
 
     public static function canManageUsers(): bool
@@ -181,7 +195,7 @@ class PanelAccess
     {
         return (int) $client->id === self::managedClientId()
             && $client->nazwa !== 'admin'
-            && self::canAssign((int) ($client->poziom_konta ?? self::LEVEL_USER));
+            && self::canManageUsers();
     }
 
     public static function canDelete(PanelUser $user): bool

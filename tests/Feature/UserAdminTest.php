@@ -26,6 +26,89 @@ class UserAdminTest extends TestCase
         $this->assertSame(PanelAccess::LEVEL_USER, PanelAccess::actorLevel());
     }
 
+    public function test_raised_shared_login_still_cannot_manage_users(): void
+    {
+        $client = $this->makeClient([
+            'login' => 'firma',
+            'nazwa' => 'FIRMA',
+            'poziom_konta' => PanelAccess::LEVEL_SUPER,
+        ]);
+        $this->actingAs($client);
+        CustomerContext::put($client);
+
+        $this->get('/klient')->assertOk()->assertDontSee('id="usersAdmin"', false);
+        $this->get('/klient/uzytkownicy')->assertForbidden();
+        $this->post('/klient/uzytkownicy', [
+            'id' => 0,
+            'login' => 'obcy',
+            'poziom' => PanelAccess::LEVEL_SUPER,
+            'haslo' => 'tajne',
+            'aktywny' => 1,
+        ])->assertForbidden();
+        $this->assertSame(0, PanelUser::query()->count());
+        $this->assertSame(PanelAccess::LEVEL_USER, PanelAccess::actorLevel());
+    }
+
+    public function test_legacy_admin_cannot_add_users_after_personal_admin_exists(): void
+    {
+        $admin = $this->makeClient(['login' => 'admin', 'nazwa' => 'admin', 'IMGW' => 0]);
+        $client = $this->makeClient(['login' => 'firma', 'nazwa' => 'FIRMA']);
+        $this->makePanelUser($client->id, [
+            'login' => 'szef',
+            'poziom' => PanelAccess::LEVEL_ADMIN,
+        ]);
+        $this->actingAs($admin);
+        CustomerContext::put($client);
+
+        $this->get('/klient')->assertOk()->assertDontSee('id="usersAdmin"', false);
+        $this->get('/klient/uzytkownicy')->assertForbidden();
+        $this->post('/klient/uzytkownicy', [
+            'rodzaj' => 'user',
+            'id' => 0,
+            'login' => 'obcy',
+            'poziom' => PanelAccess::LEVEL_SUPER,
+            'haslo' => 'tajne',
+            'aktywny' => 1,
+        ])->assertForbidden();
+        $this->post('/klient/uzytkownicy', [
+            'rodzaj' => 'firma',
+            'id' => $client->id,
+            'login' => 'firma',
+            'poziom' => PanelAccess::LEVEL_SUPER,
+            'haslo' => 'przejete',
+        ])->assertForbidden();
+        $this->assertNull(PanelUser::query()->where('login', 'obcy')->first());
+        $this->assertSame(PanelAccess::LEVEL_USER, (int) $client->fresh()->poziom_konta);
+        $this->assertTrue($client->fresh()->passwordMatches('secret'));
+    }
+
+    public function test_shared_account_level_cannot_be_raised(): void
+    {
+        $client = $this->makeClient([
+            'login' => 'firma',
+            'nazwa' => 'FIRMA',
+            'poziom_konta' => PanelAccess::LEVEL_SUPER,
+        ]);
+        $this->makePanelUser($client->id, [
+            'login' => 'szef',
+            'poziom' => PanelAccess::LEVEL_SUPER,
+        ]);
+        $this->loginPanel('szef');
+
+        $this->get('/klient/uzytkownicy')->assertOk();
+        $this->assertSame(PanelAccess::LEVEL_USER, (int) $client->fresh()->poziom_konta);
+
+        $this->post('/klient/uzytkownicy', [
+            'rodzaj' => 'firma',
+            'id' => $client->id,
+            'login' => 'firma',
+            'poziom' => PanelAccess::LEVEL_SUPER,
+            'haslo' => '',
+            'mod_tabela' => 1,
+        ])->assertRedirect(route('klient.users'));
+        $this->assertSame(PanelAccess::LEVEL_USER, (int) $client->fresh()->poziom_konta);
+    }
+
     public function test_system_admin_can_create_user_and_edit_shared_account(): void
     {
         $admin = $this->makeClient(['login' => 'admin', 'nazwa' => 'admin', 'IMGW' => 0]);
