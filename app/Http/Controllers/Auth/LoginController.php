@@ -39,7 +39,7 @@ class LoginController extends Controller
             $request
         );
 
-        return redirect('/klient');
+        return redirect('/klient')->with('wind_in', true);
     }
 
     public function destroy(Request $request): RedirectResponse

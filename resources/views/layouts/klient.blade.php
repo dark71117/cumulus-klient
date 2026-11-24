@@ -7,12 +7,18 @@
     <title>Cumulus - serwis pogodowy</title>
     <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=8">
     <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=26">
+    @if(session('wind_in'))
+        <link rel="stylesheet" href="{{ asset('css/wind-in.css') }}?v=1">
+    @endif
     <link rel="stylesheet" href="{{ asset('css/gfs-map.css') }}?v=11">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.3/css/buttons.dataTables.min.css">
 </head>
-<body class="layout-app">
+<body class="layout-app{{ session('wind_in') ? ' wind-in' : '' }}">
+@if(session('wind_in'))
+    <div class="wind-gust" aria-hidden="true"></div>
+@endif
 @php
     $barCustomer = is_array($customer ?? null) ? $customer : \App\Support\CustomerContext::get();
     $showAdminBar = $adminBar ?? \App\Support\CustomerContext::isAdmin();

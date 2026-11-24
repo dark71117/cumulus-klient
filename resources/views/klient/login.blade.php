@@ -4,33 +4,26 @@
 <div class="client-login">
     <form method="post" action="{{ url('/klient') }}" id="login-form">
         @csrf
-        <div class="row">
-            <div class="company">SERWIS POGODOWY BIURA PROGNOZ</div>
-        </div>
-        <div class="row">
+        <div class="login-brand">
             <img src="{{ asset('images/logo_cumulus.png') }}" alt="Cumulus">
+            <p class="company">Serwis pogodowy Biura Prognoz</p>
         </div>
-        <div class="row">
-            <div class="col-lg-6">
-                <input type="text" name="login" value="{{ old('login') }}" autofocus placeholder="Login">
-                @error('login')<div class="error">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-lg-6">
-                <input type="password" name="password" placeholder="Hasło">
-                @error('password')<div class="error">{{ $message }}</div>@enderror
-            </div>
+        <div class="login-field">
+            <label for="login">Login</label>
+            <input id="login" type="text" name="login" value="{{ old('login') }}" autofocus autocomplete="username" required>
+            @error('login')<div class="error" role="alert">{{ $message }}</div>@enderror
         </div>
-        <div class="row">
-            <div class="col-lg-6">
-                <label><input type="checkbox" name="remember" value="1"> Zapamiętaj hasło</label>
-            </div>
-            <div class="col-lg-6">
-                <button type="submit" class="btn-3d">Zaloguj</button>
-            </div>
+        <div class="login-field">
+            <label for="password">Hasło</label>
+            <input id="password" type="password" name="password" autocomplete="current-password" required>
+            @error('password')<div class="error" role="alert">{{ $message }}</div>@enderror
         </div>
+        <label class="remember">
+            <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
+            <span>Zapamiętaj hasło</span>
+        </label>
+        <button type="submit">Zaloguj</button>
     </form>
-    <div class="row">
-        <div class="ipAddress">Twój adres IP: {{ $ipAddress }}</div>
-    </div>
+    <p class="ipAddress">Twój adres IP: {{ $ipAddress }}</p>
 </div>
 @endsection

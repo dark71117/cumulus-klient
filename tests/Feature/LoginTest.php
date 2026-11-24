@@ -10,7 +10,16 @@ class LoginTest extends TestCase
 {
     public function test_guest_sees_login_form(): void
     {
-        $this->get('/klient')->assertOk()->assertSee('Zaloguj');
+        $this->get('/klient')
+            ->assertOk()
+            ->assertSee('Zaloguj')
+            ->assertSee('Zapamiętaj hasło')
+            ->assertSee('css/login.css', false)
+            ->assertSee('login-stage', false)
+            ->assertSee('name="login"', false)
+            ->assertSee('name="password"', false);
+        $this->assertFileExists(public_path('images/cumulus-sky.jpg'));
+        $this->assertStringContainsString('cumulus-sky.jpg', file_get_contents(public_path('css/login.css')));
     }
 
     public function test_wrong_password_is_rejected(): void
@@ -28,12 +37,15 @@ class LoginTest extends TestCase
         $this->post('/klient', [
             'login' => 'test',
             'password' => 'secret',
-        ])->assertRedirect('/klient');
+        ])->assertRedirect('/klient')->assertSessionHas('wind_in', true);
 
         $page = $this->get('/klient')->assertOk();
         $page->assertSee('wyłączność strony dla')->assertSee('Wyloguj')->assertSee('app-sidebar');
+        $page->assertSee('wind-in', false)->assertSee('wind-gust', false);
         $this->assertSame(1, substr_count($page->getContent(), '>Wyloguj</button>'));
         $this->assertSame('TEST', CustomerContext::get()['nazwa']);
+
+        $this->get('/klient')->assertOk()->assertDontSee('wind-gust', false);
     }
 
     public function test_blocked_ip_range_rejects_login(): void

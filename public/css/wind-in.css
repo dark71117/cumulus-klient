@@ -1,0 +1,66 @@
+body.wind-in .app-shell {
+    animation: wind-board .9s cubic-bezier(.16, .84, .28, 1) both;
+}
+
+.wind-gust {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.wind-gust::before,
+.wind-gust::after {
+    content: "";
+    position: absolute;
+    top: -12%;
+    bottom: -12%;
+    left: 0;
+    width: 34%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .62), transparent);
+    filter: blur(1px);
+    animation: wind-streak .85s ease-out both;
+}
+
+.wind-gust::after {
+    width: 18%;
+    opacity: .75;
+    animation-duration: .7s;
+    animation-delay: .06s;
+}
+
+@keyframes wind-board {
+    0% {
+        opacity: .15;
+        transform: translate3d(9vw, 0, 0);
+    }
+    62% {
+        opacity: 1;
+        transform: translate3d(-10px, 0, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes wind-streak {
+    0% {
+        transform: translate3d(-130%, 0, 0);
+    }
+    100% {
+        transform: translate3d(320%, 0, 0);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.wind-in .app-shell {
+        animation: none;
+    }
+
+    .wind-gust {
+        display: none;
+    }
+}
