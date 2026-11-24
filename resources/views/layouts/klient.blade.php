@@ -6,11 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cumulus - serwis pogodowy</title>
     <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=8">
-    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=26">
+    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=33">
     @if(session('wind_in'))
         <link rel="stylesheet" href="{{ asset('css/wind-in.css') }}?v=1">
     @endif
-    <link rel="stylesheet" href="{{ asset('css/gfs-map.css') }}?v=11">
+    <link rel="stylesheet" href="{{ asset('css/gfs-map.css') }}?v=15">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.3/css/buttons.dataTables.min.css">
@@ -23,6 +23,8 @@
     $barCustomer = is_array($customer ?? null) ? $customer : \App\Support\CustomerContext::get();
     $showAdminBar = $adminBar ?? \App\Support\CustomerContext::isAdmin();
     $clientsList = $clientsList ?? [];
+    $canManageUsers = \App\Support\PanelAccess::canManageUsers();
+    $isPanelUser = \App\Support\PanelAccess::isPanelUser();
 @endphp
 <form id="logout" method="post" action="{{ url('/klient/logout') }}">@csrf</form>
 <div class="app-shell">
@@ -54,7 +56,18 @@
                     </select>
                     <input type="button" class="button" id="loadPage" value="Załaduj stronę" title="Wczytaj panel wybranego klienta" data-tip="Wczytaj panel wybranego klienta">
                     <input type="button" class="button" id="ipAdmin" value="Administracja IP" title="Ograniczenia logowania według adresów IP" data-tip="Ograniczenia logowania według adresów IP">
+                    @if($canManageUsers)
+                        <input type="button" class="button" id="usersAdmin" value="Użytkownicy" title="Konta, hasła i uprawnienia do menu" data-tip="Konta, hasła i uprawnienia do menu">
+                    @endif
                 </div>
+            @elseif($canManageUsers)
+                <div class="admin sidebar-admin sidebar-admin-island">
+                    <div class="admin-label">Konta</div>
+                    <input type="button" class="button" id="usersAdmin" value="Użytkownicy" title="Konta, hasła i uprawnienia do menu" data-tip="Konta, hasła i uprawnienia do menu">
+                </div>
+            @endif
+            @if($isPanelUser)
+                <button type="button" class="button sidebar-extra" id="myProfile" title="Zmiana własnego loginu i hasła" data-tip="Zmiana własnego loginu i hasła">Mój profil</button>
             @endif
             <button type="submit" form="logout" class="btn-3d btn-logout" id="logoutBtn" title="Zakończ sesję i wróć do logowania" data-tip="Zakończ sesję i wróć do logowania">Wyloguj</button>
         </div>
@@ -92,7 +105,7 @@
 <script src="{{ asset('js/imgw-table-hour.js') }}?v=4"></script>
 <script src="{{ asset('js/imgw-table.js') }}?v=7"></script>
 <script src="{{ asset('js/analiza.js') }}?v=4"></script>
-<script src="{{ asset('js/gfs-map.js') }}?v=12"></script>
-<script src="{{ asset('js/client.js') }}?v=19"></script>
+<script src="{{ asset('js/gfs-map.js') }}?v=13"></script>
+<script src="{{ asset('js/client.js') }}?v=22"></script>
 </body>
 </html>

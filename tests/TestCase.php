@@ -71,6 +71,27 @@ abstract class TestCase extends BaseTestCase
             $table->float('geo_lat')->nullable();
             $table->float('geo_lon')->nullable();
             $table->unsignedTinyInteger('mapaOkresy')->default(12);
+            $table->unsignedTinyInteger('poziom_konta')->default(1);
+            $table->unsignedTinyInteger('mod_tabela')->default(1);
+            $table->unsignedTinyInteger('mod_mapa')->default(1);
+            $table->unsignedTinyInteger('mod_gfs')->default(1);
+            $table->unsignedTinyInteger('mod_analiza')->default(1);
+            $table->unsignedTinyInteger('mod_dodatki')->default(1);
+        });
+        Schema::create('z_uzytkownicy', function (Blueprint $table) {
+            $table->increments('id');
+            $table->unsignedInteger('id_klient')->index();
+            $table->string('login', 40)->unique();
+            $table->string('haslo');
+            $table->string('auth_key', 64)->nullable();
+            $table->string('nazwa', 100)->default('');
+            $table->unsignedTinyInteger('poziom')->default(1);
+            $table->unsignedTinyInteger('aktywny')->default(1);
+            $table->unsignedTinyInteger('mod_tabela')->default(1);
+            $table->unsignedTinyInteger('mod_mapa')->default(1);
+            $table->unsignedTinyInteger('mod_gfs')->default(1);
+            $table->unsignedTinyInteger('mod_analiza')->default(1);
+            $table->unsignedTinyInteger('mod_dodatki')->default(1);
         });
         Schema::create('ip_klienci', function (Blueprint $table) {
             $table->increments('id');

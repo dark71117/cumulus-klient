@@ -62,6 +62,7 @@
                 <option value="10">10 s</option>
             </select>
         </label>
+        <button type="button" class="gfs-refresh" data-tip="Pokazuje najnowsze dane map" title="Pokazuje najnowsze dane map">Odśwież/pobierz mapy</button>
         <button type="button" class="gfs-screen" title="Rozciągnij mapy na cały ekran">PEŁNY EKRAN</button>
         <div class="gfs-status">
             <div>STATUS meteomax.pl</div>

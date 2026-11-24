@@ -71,4 +71,26 @@ class Client extends Authenticatable
         });
         $ready = true;
     }
+
+    public static function ensureAccountColumns(): void
+    {
+        static $ready = false;
+        if ($ready) {
+            return;
+        }
+        $columns = [
+            'poziom_konta' => fn (Blueprint $table) => $table->unsignedTinyInteger('poziom_konta')->default(1),
+            'mod_tabela' => fn (Blueprint $table) => $table->unsignedTinyInteger('mod_tabela')->default(1),
+            'mod_mapa' => fn (Blueprint $table) => $table->unsignedTinyInteger('mod_mapa')->default(1),
+            'mod_gfs' => fn (Blueprint $table) => $table->unsignedTinyInteger('mod_gfs')->default(1),
+            'mod_analiza' => fn (Blueprint $table) => $table->unsignedTinyInteger('mod_analiza')->default(1),
+            'mod_dodatki' => fn (Blueprint $table) => $table->unsignedTinyInteger('mod_dodatki')->default(1),
+        ];
+        foreach ($columns as $name => $add) {
+            if (! Schema::hasColumn('z_klienci', $name)) {
+                Schema::table('z_klienci', $add);
+            }
+        }
+        $ready = true;
+    }
 }

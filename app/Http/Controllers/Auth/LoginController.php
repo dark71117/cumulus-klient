@@ -16,6 +16,10 @@ class LoginController extends Controller
     public function show(Request $request): View|RedirectResponse
     {
         if (auth()->check() && ! empty(CustomerContext::get()['login'])) {
+            if (! $this->loginService->keepPanelSession($request)) {
+                return redirect('/klient');
+            }
+
             return app(\App\Http\Controllers\KlientController::class)->index();
         }
         if ($this->loginService->loginFromRememberCookie($request)) {

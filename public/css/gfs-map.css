@@ -180,23 +180,69 @@
     padding: 0;
     font-size: 10px;
 }
-.gfs-hours button.is-fresh:not(.is-on):not(.is-complete),
-.gfs-days button.is-fresh:not(.is-on):not(.is-complete),
+.gfs-hours button.is-fresh:not(.is-on),
+.gfs-days button.is-fresh:not(.is-on),
 .gfs-hours button.is-partial:not(.is-on),
-.gfs-days button.is-partial:not(.is-on) {
-    background: #9ed99a;
-    border-color: #2f7d32;
-}
+.gfs-days button.is-partial:not(.is-on),
 .gfs-hours button.is-complete:not(.is-on),
 .gfs-days button.is-complete:not(.is-on) {
-    background: #7eb6ea;
-    border-color: #1d4e89;
+    background: #c6ecff;
+    border-color: #7ec0e4;
 }
 .gfs-hours button:disabled, .gfs-days button:disabled {
     background: #c4c4c4;
     color: #555;
     border-color: #9a9a9a;
     cursor: default;
+}
+.gfs-refresh,
+.gfs-screen {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: 6px 4px;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    color: #fff;
+    border: 1px solid #0e4a78;
+    border-radius: 8px;
+    background: linear-gradient(to bottom, #4aa3e0 0%, #1d74c4 46%, #155fa3 54%, #2a86d0 100%);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, .28);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .42),
+        0 2px 0 #0c3d66,
+        0 4px 8px rgba(0, 0, 0, .18);
+    cursor: pointer;
+    transition: transform .08s ease, box-shadow .08s ease, filter .08s ease;
+}
+.gfs-refresh:hover,
+.gfs-screen:hover {
+    color: #fff;
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .55),
+        0 3px 0 #0c3d66,
+        0 6px 12px rgba(0, 0, 0, .22);
+}
+.gfs-refresh:active,
+.gfs-screen:active {
+    color: #fff;
+    filter: none;
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, .28);
+}
+.gfs-refresh:disabled {
+    cursor: progress;
+    opacity: .75;
+    filter: none;
+    transform: none;
+}
+.gfs-screen {
+    margin-top: auto;
 }
 .gfs-step { display: flex; justify-content: center; gap: 3px; }
 .gfs-step button { background: #ffe14a; border-color: #c6a400; min-width: 28px; font-weight: 700; }
@@ -210,16 +256,6 @@
     font-weight: 700;
 }
 .gfs-delay select { font: inherit; min-width: 0; flex: 1; }
-.gfs-screen {
-    margin-top: auto;
-    width: 100%;
-    font: inherit;
-    font-weight: 700;
-    padding: 5px 2px;
-    cursor: pointer;
-    border: 1px solid #8a6a00;
-    background: #ffe14a;
-}
 .gfs-app.is-full {
     position: fixed;
     inset: 0;

@@ -3,6 +3,7 @@
 namespace App\Services\Panel;
 
 use App\Support\CustomerContext;
+use App\Support\PanelAccess;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -66,15 +67,16 @@ class MenuTabsService
     {
         $customer = CustomerContext::get();
         $types = [
-            'imgwTableNew2Tab' => 'IMGW',
-            'analizaTab' => 'IMGW',
-            'imgwMapNew2Tab' => 'mapaWarunkow',
-            'gddkiaRegionTab' => 'GDDKIAwoj',
-            'gddkiaRoadTab' => 'GDDKIAdrogi',
+            'imgwTableNew2Tab' => ['acl' => 'IMGW', 'module' => 'tabela'],
+            'analizaTab' => ['acl' => 'IMGW', 'module' => 'analiza'],
+            'imgwMapNew2Tab' => ['acl' => 'mapaWarunkow', 'module' => 'mapa'],
+            'gddkiaRegionTab' => ['acl' => 'GDDKIAwoj', 'module' => 'dodatki'],
+            'gddkiaRoadTab' => ['acl' => 'GDDKIAdrogi', 'module' => 'dodatki'],
         ];
         $result = [];
-        foreach ($types as $selector => $acl) {
-            $result[$selector] = ['active' => (int) ($customer[$acl] ?? 0) === 1 ? 1 : 0];
+        foreach ($types as $selector => $type) {
+            $clientOn = (int) ($customer[$type['acl']] ?? 0) === 1;
+            $result[$selector] = ['active' => $clientOn && PanelAccess::allows($type['module']) ? 1 : 0];
         }
 
         return $result;

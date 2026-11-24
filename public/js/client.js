@@ -71,12 +71,13 @@ $(document).ready(function () {
         });
     });
     $('input#ipAdmin').click(function () {
-        stopLoadingContent();
-        clearNavActive();
-        $('#addonsTabs').removeClass('is-open');
-        menuPosition = 'ipAdminTab';
-        $('#ipAdmin').addClass('is-active');
-        loadIpAdmin(klientUrl('/ipadmin'));
+        openAdminPane(klientUrl('/ipadmin'), '#ipAdmin');
+    });
+    $('input#usersAdmin').click(function () {
+        openAdminPane(klientUrl('/uzytkownicy'), '#usersAdmin');
+    });
+    $('#myProfile').click(function () {
+        openAdminPane(klientUrl('/profil'), '#myProfile');
     });
     $('#content').on('change', '#imgw-map-limit, #imgw-table-limit', function () {
         var limit = parseInt(this.value, 10);
@@ -84,22 +85,51 @@ $(document).ready(function () {
             loadContent(menuPosition);
         });
     });
-    $('#content').on('submit', '.ipadmin-pane form', function (e) {
+    $('#content').on('submit', '.ipadmin-pane form, .users-app form', function (e) {
         e.preventDefault();
-        loadIpAdmin(this.action, this.method || 'POST', $(this).serialize());
+        var msg = $(this).attr('data-confirm');
+        if (msg && !window.confirm(msg)) {
+            return;
+        }
+        var errorText = $(this).closest('.users-app').length
+            ? 'Nie udało się zapisać konta.'
+            : 'Nie udało się otworzyć administracji IP.';
+        loadAdminPane(this.action, this.method || 'POST', $(this).serialize(), errorText);
+    });
+    $('#content').on('click', '[data-user-edit]', function () {
+        fillUsersModal(JSON.parse($(this).attr('data-user-edit')));
+    });
+    $('#content').on('click', '[data-user-close]', function () {
+        $('#users-modal').removeClass('is-open');
+    });
+    $('#content').on('click', '#users-modal', function (e) {
+        if (e.target === this) {
+            $(this).removeClass('is-open');
+        }
+    });
+    $('#content').on('input', '#users-search', function () {
+        var query = $(this).val().toLowerCase();
+        $('.users-table tbody tr').each(function () {
+            $(this).toggle($(this).text().toLowerCase().indexOf(query) !== -1);
+        });
+    });
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape') {
+            $('#users-modal').removeClass('is-open');
+        }
     });
     $('#content').on('click', '.ipadmin-pane a', function (e) {
         var href = this.getAttribute('href') || '';
-        if (href.indexOf('/klient/ip') === -1) {
+        if (href.indexOf('/klient/ip') === -1 && href.indexOf('/klient/uzytkownicy') === -1 && href.indexOf('/klient/profil') === -1) {
             return;
         }
         e.preventDefault();
-        loadIpAdmin(href);
+        loadAdminPane(href, 'GET', null, 'Nie udało się otworzyć strony.');
     });
 
     $('#mainTabs > div').click(function () {
         var id = $(this).attr('id');
-        $('#ipAdmin').removeClass('is-active');
+        $('#ipAdmin, #usersAdmin, #myProfile').removeClass('is-active');
         if (id === 'addonsTab') {
             $('#addonsTabs').toggleClass('is-open');
             return;
@@ -122,7 +152,7 @@ $(document).ready(function () {
     $('#addonsTabs').on('click', '.nav-btn:not(.nav-ext)', function () {
         var id = $(this).attr('id');
         stopLoadingContent();
-        $('#ipAdmin').removeClass('is-active');
+        $('#ipAdmin, #usersAdmin, #myProfile').removeClass('is-active');
         $('#mainTabs > div.t1b').removeClass('t1b');
         $('#addonsTab').addClass('t1b');
         $('#addonsTabs').addClass('is-open');
@@ -152,6 +182,7 @@ $(document).ready(function () {
     setActualTabs();
     getTabStatus();
     openTableOnStart();
+    openUsersModalFromPane();
 });
 
 function clearNavActive() {
@@ -180,8 +211,15 @@ function openTableOnStart() {
     }
     if (!$('#imgwTableNew2Tab').hasClass('hidden')) {
         $('#imgwTableNew2Tab').trigger('click');
-    } else if (!$('#imgwMapNew2Tab').hasClass('hidden')) {
-        $('#imgwMapNew2Tab').trigger('click');
+        return;
+    }
+    var next = ['#imgwMapNew2Tab', '#analizaTab', '#gfsMapTab'];
+    for (var i = 0; i < next.length; i++) {
+        var $tab = $(next[i]);
+        if ($tab.length && !$tab.hasClass('hidden')) {
+            $tab.trigger('click');
+            return;
+        }
     }
 }
 
@@ -270,7 +308,51 @@ function hideLoading() {
     loading = 0;
     loadingDiv.hide();
 }
+function openAdminPane(url, activeId) {
+    stopLoadingContent();
+    clearNavActive();
+    $('#addonsTabs').removeClass('is-open');
+    menuPosition = activeId;
+    $('#ipAdmin, #usersAdmin, #myProfile').removeClass('is-active');
+    $(activeId).addClass('is-active');
+    loadAdminPane(url, 'GET', null, 'Nie udało się otworzyć strony.');
+}
+
+function fillUsersModal(data) {
+    var $modal = $('#users-modal');
+    if (!$modal.length || !data) {
+        return;
+    }
+    var firm = data.rodzaj === 'firma';
+    $modal.find('[name=rodzaj]').val(firm ? 'firma' : 'user');
+    $modal.find('[name=id]').val(data.id || 0);
+    $modal.find('[name=login]').val(data.login || '');
+    $modal.find('[name=nazwa]').val(data.nazwa || '');
+    $modal.find('[name=poziom]').val(String(data.poziom || 1));
+    $modal.find('[name=haslo]').val('').prop('required', !firm && !data.id);
+    $modal.find('[name=aktywny]').prop('checked', String(data.aktywny) !== '0');
+    ['tabela', 'mapa', 'gfs', 'analiza', 'dodatki'].forEach(function (key) {
+        $modal.find('[name=mod_' + key + ']').prop('checked', String(data['mod_' + key]) === '1');
+    });
+    $modal.find('.users-field-nazwa, .users-field-active').toggleClass('is-hidden', firm);
+    var title = firm ? 'EDYCJA KONTA WSPÓLNEGO' : (data.id ? 'EDYCJA UŻYTKOWNIKA ' + (data.login || '') : 'DODAJ UŻYTKOWNIKA');
+    $('#users-modal-title').text(title);
+    $modal.addClass('is-open');
+    $modal.find('[name=login]').trigger('focus');
+}
+
+function openUsersModalFromPane() {
+    var $modal = $('#users-modal');
+    if ($modal.attr('data-open') === '1' && $modal.attr('data-form')) {
+        fillUsersModal(JSON.parse($modal.attr('data-form')));
+    }
+}
+
 function loadIpAdmin(url, method, data) {
+    loadAdminPane(url, method, data, 'Nie udało się otworzyć administracji IP.');
+}
+
+function loadAdminPane(url, method, data, errorText) {
     if (loading === 1) {
         stopLoadingContent();
     }
@@ -285,7 +367,7 @@ function loadIpAdmin(url, method, data) {
             if (status === 'abort') {
                 return;
             }
-            contentDiv.html('Nie udało się otworzyć administracji IP.');
+            contentDiv.html(errorText || 'Nie udało się otworzyć strony.');
         },
         success: function (html) {
             destroyImgwLeaflet();
@@ -294,6 +376,7 @@ function loadIpAdmin(url, method, data) {
             contentDiv.removeClass('has-map has-analiza has-imgw-table has-gfs');
             contentDiv.html(html);
             setContentDivHeight();
+            openUsersModalFromPane();
         },
         complete: hideLoading
     });

@@ -210,14 +210,6 @@ function initGfsMap() {
         return button ? button.dataset.tab : 'synoptyk';
     }
 
-    function describeMaps(count, fresh) {
-        var total = active().coverage && active().coverage.total;
-        var parts = [];
-        if (total && count) parts.push(count + ' z ' + total + ' map' + (count >= total ? ', komplet' : ''));
-        if (fresh) parts.push('nowa mapa');
-        return parts.join(' — ');
-    }
-
     function daySum(day) {
         var products = active().coverage && active().coverage.total;
         var hours = active().coverage && active().coverage.hours;
@@ -253,12 +245,6 @@ function initGfsMap() {
     function markFill(button, stateName) {
         if (stateName === 'complete') button.classList.add('is-complete');
         else if (stateName === 'partial') button.classList.add('is-partial');
-    }
-
-    function setTip(button, text) {
-        if (!text) return;
-        button.title = text;
-        button.setAttribute('data-tip', text);
     }
 
     function utcNow() {
@@ -419,10 +405,6 @@ function initGfsMap() {
             button.textContent = day.label;
             var dayFresh = day.clocks.some(function (item) { return active().fresh && active().fresh[item.lead]; });
             var sum = daySum(day);
-            var dayText = sum ? (sum.got + ' z ' + sum.max + ' map' + (sum.got >= sum.max ? ', komplet' : '')) : '';
-            if (dayFresh && dayText) dayText += ' — nowa mapa';
-            var dayTip = [day.date, dayText].filter(Boolean).join(' — ');
-            setTip(button, dayTip);
             markFill(button, !sum ? '' : (sum.got >= sum.max ? 'complete' : 'partial'));
             if (dayFresh) button.classList.add('is-fresh');
             if (current && current.day.date === day.date) button.classList.add('is-on');
@@ -440,7 +422,6 @@ function initGfsMap() {
             if (!lead) button.disabled = true;
             var hourFresh = !!(lead && active().fresh && active().fresh[lead]);
             var hourCount = lead && active().coverage ? active().coverage.hours[lead] : 0;
-            setTip(button, describeMaps(hourCount, hourFresh));
             markFill(button, fillState(hourCount));
             if (hourFresh) button.classList.add('is-fresh');
             if (current && parseInt(current.clock, 10) === group.end) button.classList.add('is-on');
@@ -634,6 +615,18 @@ function initGfsMap() {
             step(parseInt(button.dataset.dir, 10));
         });
     });
+    var refreshBtn = root.querySelector('.gfs-refresh');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function () {
+            if (refreshBtn.disabled || !state.run) return;
+            refreshBtn.disabled = true;
+            var pending = state.layout;
+            var finish = function () {
+                if (--pending <= 0 && root.isConnected) refreshBtn.disabled = false;
+            };
+            for (var i = 0; i < state.layout; i++) loadFrames(i, true, false, finish);
+        });
+    }
     var screenBtn = root.querySelector('.gfs-screen');
     function setScreen(full) {
         root.classList.toggle('is-full', full);

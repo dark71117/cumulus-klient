@@ -14,6 +14,7 @@ use App\Services\Panel\MeteomaxService;
 use App\Services\Panel\WarningService;
 use App\Support\CustomerContext;
 use App\Support\ImgwMap;
+use App\Support\PanelAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -67,6 +68,7 @@ class KlientController extends Controller
     public function content(Request $request): Response
     {
         $tab = (string) $request->input('tab', '');
+        abort_unless(PanelAccess::allowsTab($tab), 403);
         $position = (int) $request->input('position', 0);
         $customer = auth()->user();
         if ($customer && $customer->nazwa !== 'admin' && config('cumulus.save_usage')) {
