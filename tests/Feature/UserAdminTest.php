@@ -251,6 +251,23 @@ class UserAdminTest extends TestCase
         $this->makePanelUser($client->id, ['login' => 'ania']);
         $this->post('/klient', ['login' => 'ania', 'password' => 'tajne']);
 
+        $this->get('/klient/profil')
+            ->assertOk()
+            ->assertSee('users-modal is-open', false)
+            ->assertSee('LOGIN I HASŁO', false)
+            ->assertSee('name="obecne"', false)
+            ->assertSee('value="ania"', false);
+
+        $this->post('/klient/profil', [
+            'login' => 'ania2',
+            'haslo' => 'nowehaslo',
+            'haslo_confirmation' => 'inne',
+            'obecne' => 'tajne',
+        ], ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()
+            ->assertSee('users-modal is-open', false)
+            ->assertSee('Powtórzone hasło nie jest takie samo.', false);
+
         $this->from('/klient/profil')->post('/klient/profil', [
             'login' => 'ania2',
             'haslo' => 'nowehaslo',
@@ -357,6 +374,83 @@ class UserAdminTest extends TestCase
             'mod_dodatki' => 1,
         ])->assertRedirect(route('klient.users'));
         $this->assertSame('Szef zmiany', $self->fresh()->nazwa);
+    }
+
+    public function test_shared_login_can_be_turned_off_without_blocking_personal_accounts(): void
+    {
+        $client = $this->makeClient(['login' => 'firma', 'nazwa' => 'FIRMA']);
+        $this->makePanelUser($client->id, [
+            'login' => 'szef',
+            'poziom' => PanelAccess::LEVEL_SUPER,
+        ]);
+        $this->loginPanel('szef');
+
+        $this->get('/klient/uzytkownicy')
+            ->assertOk()
+            ->assertSee('name="aktywny"', false);
+
+        $this->post('/klient/uzytkownicy', [
+            'rodzaj' => 'firma',
+            'id' => $client->id,
+            'login' => 'firma',
+            'poziom' => PanelAccess::LEVEL_USER,
+            'aktywny' => 0,
+            'haslo' => '',
+            'mod_tabela' => 1,
+        ])->assertRedirect(route('klient.users'));
+
+        $fresh = $client->fresh();
+        $this->assertSame(0, (int) $fresh->login_aktywny);
+        $this->assertSame(1, (int) $fresh->aktywny);
+
+        $this->post('/klient/logout');
+        $this->from('/klient')->post('/klient', [
+            'login' => 'firma',
+            'password' => 'secret',
+        ])->assertSessionHasErrors('login');
+        $this->post('/klient', [
+            'login' => 'szef',
+            'password' => 'tajne',
+        ])->assertRedirect('/klient');
+    }
+
+    public function test_disabled_shared_login_loses_session(): void
+    {
+        $client = $this->makeClient(['login' => 'firma', 'nazwa' => 'FIRMA']);
+        $this->post('/klient', ['login' => 'firma', 'password' => 'secret'])->assertRedirect('/klient');
+        $client->login_aktywny = 0;
+        $client->save();
+
+        $this->get('/klient')->assertRedirect('/klient');
+        $this->assertGuest();
+    }
+
+    public function test_editor_can_deactivate_user_from_the_form(): void
+    {
+        $client = $this->makeClient(['login' => 'firma', 'nazwa' => 'FIRMA']);
+        $this->makePanelUser($client->id, [
+            'login' => 'szef',
+            'poziom' => PanelAccess::LEVEL_SUPER,
+        ]);
+        $user = $this->makePanelUser($client->id, ['login' => 'ania']);
+        $this->loginPanel('szef');
+
+        $this->get('/klient/uzytkownicy')
+            ->assertOk()
+            ->assertSee('name="aktywny"', false)
+            ->assertSee('value="0">nie', false);
+
+        $this->post('/klient/uzytkownicy', [
+            'rodzaj' => 'user',
+            'id' => $user->id,
+            'login' => 'ania',
+            'nazwa' => 'Anna',
+            'poziom' => PanelAccess::LEVEL_USER,
+            'aktywny' => 0,
+            'haslo' => '',
+        ])->assertRedirect(route('klient.users'));
+
+        $this->assertSame(0, (int) $user->fresh()->aktywny);
     }
 
     public function test_system_admin_manages_selected_client_only(): void

@@ -54,6 +54,9 @@ class UserAccountService
         Client::ensureAccountColumns();
         $client->login = $data['login'];
         $client->poziom_konta = PanelAccess::LEVEL_USER;
+        if (array_key_exists('aktywny', $data)) {
+            $client->login_aktywny = ! empty($data['aktywny']) ? 1 : 0;
+        }
         foreach (array_keys(PanelAccess::MODULES) as $module) {
             $client->{'mod_'.$module} = ! empty($data['modules'][$module]) ? 1 : 0;
         }

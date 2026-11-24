@@ -92,12 +92,16 @@ $(document).ready(function () {
             return;
         }
         var errorText = $(this).closest('.users-app').length
-            ? 'Nie udało się zapisać konta.'
+            ? ($(this).find('[name=obecne]').length ? 'Nie udało się zapisać profilu.' : 'Nie udało się zapisać konta.')
             : 'Nie udało się otworzyć administracji IP.';
         loadAdminPane(this.action, this.method || 'POST', $(this).serialize(), errorText);
     });
     $('#content').on('click', '[data-user-edit]', function () {
         fillUsersModal(JSON.parse($(this).attr('data-user-edit')));
+    });
+    $('#content').on('click', '[data-profile-open]', function () {
+        $('#users-modal').addClass('is-open');
+        $('#users-modal [name=login]').trigger('focus');
     });
     $('#content').on('click', '[data-user-close]', function () {
         $('#users-modal').removeClass('is-open');
@@ -330,11 +334,12 @@ function fillUsersModal(data) {
     $modal.find('[name=nazwa]').val(data.nazwa || '');
     $modal.find('[name=poziom]').val(firm ? '1' : String(data.poziom || 1));
     $modal.find('[name=haslo]').val('').prop('required', !firm && !data.id);
-    $modal.find('[name=aktywny]').prop('checked', String(data.aktywny) !== '0');
+    $modal.find('[name=aktywny]').val(String(data.aktywny) === '0' ? '0' : '1');
     ['tabela', 'mapa', 'gfs', 'analiza', 'dodatki'].forEach(function (key) {
         $modal.find('[name=mod_' + key + ']').prop('checked', String(data['mod_' + key]) === '1');
     });
-    $modal.find('.users-field-nazwa, .users-field-active, .users-field-level').toggleClass('is-hidden', firm);
+    $modal.find('.users-field-nazwa, .users-field-level').toggleClass('is-hidden', firm);
+    $modal.find('.users-field-active').removeClass('is-hidden');
     var title = firm ? 'EDYCJA KONTA WSPÓLNEGO' : (data.id ? 'EDYCJA UŻYTKOWNIKA ' + (data.login || '') : 'DODAJ UŻYTKOWNIKA');
     $('#users-modal-title').text(title);
     $modal.addClass('is-open');
@@ -377,6 +382,9 @@ function loadAdminPane(url, method, data, errorText) {
             contentDiv.html(html);
             setContentDivHeight();
             openUsersModalFromPane();
+            if ($('#users-modal.is-open [name=obecne]').length) {
+                $('#users-modal [name=login]').trigger('focus');
+            }
         },
         complete: hideLoading
     });

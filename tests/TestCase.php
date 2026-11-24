@@ -72,6 +72,7 @@ abstract class TestCase extends BaseTestCase
             $table->float('geo_lon')->nullable();
             $table->unsignedTinyInteger('mapaOkresy')->default(12);
             $table->unsignedTinyInteger('poziom_konta')->default(1);
+            $table->unsignedTinyInteger('login_aktywny')->default(1);
             $table->unsignedTinyInteger('mod_tabela')->default(1);
             $table->unsignedTinyInteger('mod_mapa')->default(1);
             $table->unsignedTinyInteger('mod_gfs')->default(1);

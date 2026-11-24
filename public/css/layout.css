@@ -546,6 +546,20 @@ body.layout-app {
     background: rgba(8, 20, 34, .55);
 }
 .users-modal.is-open { display: flex; }
+.users-modal-card.is-profile { width: min(520px, 100%); }
+.users-profile-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+    margin: 0 0 14px;
+}
+.users-profile-meta span {
+    display: block;
+    margin-bottom: 2px;
+    color: #52606d;
+    font-size: 12px;
+    font-weight: 700;
+}
 .users-modal-card {
     width: min(760px, 100%);
     max-height: calc(100vh - 48px);
@@ -616,6 +630,7 @@ body.layout-app {
 .users-modules { margin-top: 14px; }
 @media (max-width: 720px) {
     .users-form-grid,
+    .users-profile-meta,
     .users-toolbar { display: block; }
     .users-toolbar .users-btn { margin-top: 10px; }
 }

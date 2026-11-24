@@ -33,7 +33,7 @@ class LoginService
         }
 
         $client = Client::findActiveByLogin($login);
-        if (! $client || ! $client->passwordMatches($password)) {
+        if (! $client || ! $client->passwordMatches($password) || (! $client->isAdmin() && ! $client->sharedLoginEnabled())) {
             throw ValidationException::withMessages([
                 'login' => 'Błędny login lub hasło.',
             ]);
@@ -69,7 +69,7 @@ class LoginService
         }
 
         $client = Client::findActiveByAuthKey((string) ($data['auth_key'] ?? ''));
-        if (! $client || (int) $client->id !== (int) ($data['id'] ?? 0)) {
+        if (! $client || (int) $client->id !== (int) ($data['id'] ?? 0) || (! $client->isAdmin() && ! $client->sharedLoginEnabled())) {
             return false;
         }
 
@@ -207,7 +207,7 @@ class LoginService
 
         Client::ensureAccountColumns();
         $fresh = Client::query()->find($auth->id);
-        if (! $fresh || ! $fresh->isActive()) {
+        if (! $fresh || ! $fresh->isActive() || ! $fresh->sharedLoginEnabled()) {
             $this->logout(request());
 
             return false;

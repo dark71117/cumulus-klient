@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cumulus - serwis pogodowy</title>
     <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=8">
-    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=33">
+    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=34">
     @if(session('wind_in'))
         <link rel="stylesheet" href="{{ asset('css/wind-in.css') }}?v=1">
     @endif
@@ -106,6 +106,6 @@
 <script src="{{ asset('js/imgw-table.js') }}?v=7"></script>
 <script src="{{ asset('js/analiza.js') }}?v=4"></script>
 <script src="{{ asset('js/gfs-map.js') }}?v=13"></script>
-    <script src="{{ asset('js/client.js') }}?v=23"></script>
+    <script src="{{ asset('js/client.js') }}?v=26"></script>
 </body>
 </html>

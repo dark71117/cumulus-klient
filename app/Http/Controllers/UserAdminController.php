@@ -102,12 +102,16 @@ class UserAdminController extends Controller
             return $this->failed($request, $validator, null);
         }
 
-        $this->accounts->saveFirm($client, [
+        $firm = [
             'login' => $request->input('login'),
             'poziom' => PanelAccess::LEVEL_USER,
             'haslo' => (string) $request->input('haslo', ''),
             'modules' => $this->modules($request),
-        ]);
+        ];
+        if ($request->has('aktywny')) {
+            $firm['aktywny'] = $request->boolean('aktywny');
+        }
+        $this->accounts->saveFirm($client, $firm);
 
         return $this->saved($request, 'Zapisano konto wspólne.');
     }

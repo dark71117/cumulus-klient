@@ -20,7 +20,7 @@
             'login' => (string) $client->login,
             'nazwa' => (string) $client->nazwa,
             'poziom' => \App\Support\PanelAccess::LEVEL_USER,
-            'aktywny' => 1,
+            'aktywny' => (int) ($client->login_aktywny ?? 1) === 1 ? 1 : 0,
             'mod_tabela' => (int) ($client->mod_tabela ?? 1),
             'mod_mapa' => (int) ($client->mod_mapa ?? 1),
             'mod_gfs' => (int) ($client->mod_gfs ?? 1),
@@ -86,7 +86,7 @@
                     </div>
                     <button type="button" class="users-btn users-btn-primary" data-user-edit="{{ json_encode($blank, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}">+ Dodaj użytkownika</button>
                 </div>
-                <p class="users-note">Konto wspólne jest zawsze zwykłym użytkownikiem. Hasło firmy nie zarządza kontami i nie da się tego podnieść. Gdy firma ma już swojego administratora, stary login panelu też nie zakłada nowych kont.</p>
+                <p class="users-note">Konto wspólne jest zawsze zwykłym użytkownikiem. Hasło firmy nie zarządza kontami i nie da się tego podnieść. Można je wyłączyć — stary login wtedy nie wchodzi, a konta osobne zostają. Gdy firma ma już swojego administratora, stary login panelu też nie zakłada nowych kont.</p>
                 <div class="users-table-wrap">
                     <table class="users-table">
                         <thead>
@@ -105,7 +105,7 @@
                                 <td>{{ $firm['nazwa'] }}</td>
                                 <td><span class="users-badge {{ $levelClass[$firm['poziom']] ?? 'is-user' }}">{{ $levels[$firm['poziom']] ?? \App\Support\PanelAccess::LEVELS[$firm['poziom']] ?? $firm['poziom'] }}</span></td>
                                 <td class="users-mods">{{ collect($modules)->filter(fn ($label, $key) => (int) $firm['mod_'.$key] === 1)->implode(', ') ?: 'brak' }}</td>
-                                <td><span class="users-badge is-on">tak</span></td>
+                                <td><span class="users-badge {{ (int) ($firm['aktywny'] ?? 1) === 1 ? 'is-on' : 'is-off' }}">{{ (int) ($firm['aktywny'] ?? 1) === 1 ? 'tak' : 'nie' }}</span></td>
                                 <td class="users-actions">
                                     @if(\App\Support\PanelAccess::canEditFirm($client))
                                         <button type="button" class="users-icon users-icon-edit" title="Edytuj konto wspólne" data-user-edit="{{ json_encode($firm, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}">
@@ -188,7 +188,12 @@
                             <label>Hasło
                                 <input type="password" name="haslo" autocomplete="new-password" placeholder="Puste zostawia dotychczasowe">
                             </label>
-                            <label class="users-check users-field-active"><input type="checkbox" name="aktywny" value="1" checked> Konto aktywne</label>
+                            <label class="users-field-active">Aktywne
+                                <select name="aktywny">
+                                    <option value="1">tak</option>
+                                    <option value="0">nie</option>
+                                </select>
+                            </label>
                         </div>
                         <div class="users-modules">
                             @foreach($modules as $key => $label)

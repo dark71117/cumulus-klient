@@ -33,6 +33,11 @@ class Client extends Authenticatable
         return (int) $this->aktywny === 1;
     }
 
+    public function sharedLoginEnabled(): bool
+    {
+        return (int) ($this->login_aktywny ?? 1) === 1;
+    }
+
     public function isAdmin(): bool
     {
         return $this->nazwa === 'admin';
@@ -80,6 +85,7 @@ class Client extends Authenticatable
         }
         $columns = [
             'poziom_konta' => fn (Blueprint $table) => $table->unsignedTinyInteger('poziom_konta')->default(1),
+            'login_aktywny' => fn (Blueprint $table) => $table->unsignedTinyInteger('login_aktywny')->default(1),
             'mod_tabela' => fn (Blueprint $table) => $table->unsignedTinyInteger('mod_tabela')->default(1),
             'mod_mapa' => fn (Blueprint $table) => $table->unsignedTinyInteger('mod_mapa')->default(1),
             'mod_gfs' => fn (Blueprint $table) => $table->unsignedTinyInteger('mod_gfs')->default(1),
