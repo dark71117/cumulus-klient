@@ -74,6 +74,27 @@ class FirmAdminController extends Controller
         return redirect()->route('klient.firms')->with('success', 'Zapisano firmę.');
     }
 
+    public function destroy(Request $request): View|RedirectResponse
+    {
+        abort_unless(PanelAccess::canManageCompany(), 403);
+        $client = $this->find((int) $request->input('id', 0));
+        abort_unless($client, 404);
+        abort_unless($client->panelUsers()->count() === 0, 403);
+        if ((int) session('panel_firm_id') === (int) $client->id) {
+            session()->forget('panel_firm_id');
+        }
+        $client->ipRanges()->delete();
+        $client->delete();
+
+        if ($request->ajax()) {
+            session()->now('success', 'Usunięto firmę.');
+
+            return $this->page($request);
+        }
+
+        return redirect()->route('klient.firms')->with('success', 'Usunięto firmę.');
+    }
+
     private function page(Request $request): View
     {
         $firms = Client::query()

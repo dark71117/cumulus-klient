@@ -24,6 +24,31 @@ class FirmAdminTest extends TestCase
         $this->get('/klient/firmy')->assertForbidden();
     }
 
+    public function test_empty_company_can_be_deleted_and_company_with_users_cannot(): void
+    {
+        $home = $this->makeClient(['login' => 'test', 'nazwa' => 'TEST']);
+        $this->makePanelUser($home->id, [
+            'login' => 'szef',
+            'poziom' => PanelAccess::LEVEL_SUPER,
+        ]);
+        $empty = $this->makeClient(['login' => 'pusta', 'nazwa' => 'PUSTA']);
+        $busy = $this->makeClient(['login' => 'pelna', 'nazwa' => 'PELNA']);
+        $this->makePanelUser($busy->id, ['login' => 'ania']);
+        $this->post('/klient', ['login' => 'szef', 'password' => 'tajne']);
+
+        $page = $this->get('/klient/firmy')->assertOk();
+        $page->assertSee('title="Usuń firmę PUSTA"', false);
+        $page->assertDontSee('title="Usuń firmę PELNA"', false);
+        $page->assertDontSee('title="Usuń firmę TEST"', false);
+
+        $this->post('/klient/firmy/usun', ['id' => $busy->id])->assertForbidden();
+        $this->assertNotNull($busy->fresh());
+
+        $this->post('/klient/firmy/usun', ['id' => $empty->id])->assertRedirect(route('klient.firms'));
+        $this->assertNull($empty->fresh());
+        $this->assertNotNull($home->fresh());
+    }
+
     public function test_super_admin_adds_company_then_users_within_its_modules(): void
     {
         $home = $this->makeClient(['login' => 'test', 'nazwa' => 'TEST']);

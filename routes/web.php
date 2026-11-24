@@ -44,6 +44,7 @@ Route::prefix('klient')->group(function () {
         Route::post('/uzytkownicy/usun', [UserAdminController::class, 'destroy'])->name('klient.users.delete');
         Route::get('/firmy', [FirmAdminController::class, 'index'])->name('klient.firms');
         Route::post('/firmy', [FirmAdminController::class, 'save'])->name('klient.firms.save');
+        Route::post('/firmy/usun', [FirmAdminController::class, 'destroy'])->name('klient.firms.delete');
         Route::get('/profil', [UserAdminController::class, 'profile'])->name('klient.profile');
         Route::post('/profil', [UserAdminController::class, 'updateProfile'])->name('klient.profile.save');
         Route::middleware(EnsureAdmin::class)->group(function () {
