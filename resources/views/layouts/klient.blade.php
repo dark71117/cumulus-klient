@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cumulus - serwis pogodowy</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}?v=1" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=1" sizes="32x32">
     <link rel="stylesheet" href="{{ asset('css/client.css') }}?v=8">
     <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=37">
     @if(session('wind_in'))

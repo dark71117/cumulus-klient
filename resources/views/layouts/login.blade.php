@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cumulus - Logowanie do systemu</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}?v=1" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=1" sizes="32x32">
     <link rel="stylesheet" href="{{ asset('css/login.css') }}?v=3">
 </head>
 <body class="login">

@@ -15,9 +15,13 @@ class LoginTest extends TestCase
             ->assertSee('Zaloguj')
             ->assertSee('Zapamiętaj hasło')
             ->assertSee('css/login.css', false)
+            ->assertSee('favicon.svg', false)
+            ->assertSee('favicon.ico', false)
             ->assertSee('login-stage', false)
             ->assertSee('name="login"', false)
             ->assertSee('name="password"', false);
+        $this->assertFileExists(public_path('favicon.svg'));
+        $this->assertFileExists(public_path('favicon.ico'));
         $this->assertFileExists(public_path('images/cumulus-sky.jpg'));
         $this->assertStringContainsString('cumulus-sky.jpg', file_get_contents(public_path('css/login.css')));
     }
@@ -41,6 +45,7 @@ class LoginTest extends TestCase
 
         $page = $this->get('/klient')->assertOk();
         $page->assertSee('wyłączność strony dla')->assertSee('Wyloguj')->assertSee('app-sidebar');
+        $page->assertSee('favicon.svg', false);
         $page->assertSee('wind-in', false)->assertSee('wind-gust', false);
         $this->assertSame(1, substr_count($page->getContent(), '>Wyloguj</button>'));
         $this->assertSame('TEST', CustomerContext::get()['nazwa']);
