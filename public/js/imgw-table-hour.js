@@ -27,11 +27,16 @@ function renderImgwTableHour(index) {
     $root.attr('data-hour', frame.hour || '');
     if (imgwDtTables.length) {
         updateImgwTableRows(frame.rows || []);
+        // search() przed draw() zapisuje filtr, zanim DataTables pozna typ kolumny.
+        // Przy „Łódź” / „Łódzkie” znaki są wtedy obcinane tylko w zapytaniu i miasta znikają.
+        imgwDtTables.forEach(function (api) {
+            api.draw(false);
+        });
     } else {
         fillImgwTableBodies(frame.rows || []);
         startImgwTableGrid($root);
+        applyImgwTableFilters($root);
     }
-    applyImgwTableFilters($root);
     syncImgwTableHourUi();
 }
 

@@ -118,7 +118,7 @@
 <script src="https://cdn.datatables.net/buttons/3.2.3/js/buttons.html5.min.js"></script>
 <script src="{{ asset('js/timer.js') }}"></script>
 <script src="{{ asset('js/imgw-map.js') }}?v=10"></script>
-<script src="{{ asset('js/imgw-table-hour.js') }}?v=4"></script>
+<script src="{{ asset('js/imgw-table-hour.js') }}?v=5"></script>
 <script src="{{ asset('js/imgw-table.js') }}?v=7"></script>
 <script src="{{ asset('js/analiza.js') }}?v=4"></script>
 <script src="{{ asset('js/gfs-map.js') }}?v=13"></script>

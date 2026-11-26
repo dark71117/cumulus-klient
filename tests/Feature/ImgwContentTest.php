@@ -686,6 +686,14 @@ class ImgwContentTest extends TestCase
         $this->assertStringContainsString('setTimeout', $hourJs);
         $this->assertStringNotContainsString('setInterval', $hourJs);
         $this->assertStringContainsString('imgw-table-jump', $hourJs);
+        $this->assertStringContainsString('api.draw(false)', $hourJs);
+        $render = substr($hourJs, strpos($hourJs, 'function renderImgwTableHour'));
+        $render = substr($render, 0, strpos($render, 'function imgwOrderedRows'));
+        $existing = substr($render, strpos($render, 'if (imgwDtTables.length)'));
+        $existing = substr($existing, 0, strpos($existing, '} else {'));
+        $this->assertStringContainsString('updateImgwTableRows', $existing);
+        $this->assertStringContainsString('api.draw(false)', $existing);
+        $this->assertStringNotContainsString('applyImgwTableFilters', $existing);
         $this->assertStringContainsString('function imgwDelaySwatch', $hourJs);
         $this->assertStringContainsString('imgw-dt-swatch imgw-delay-1', $hourJs);
         $this->assertStringContainsString('imgw-delay-none', $hourJs);
